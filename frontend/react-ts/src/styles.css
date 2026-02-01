@@ -1,0 +1,346 @@
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+}
+
+/* App：根据主题切换背景与默认文字色 */
+.app-page {
+    min-height: 100vh;
+    padding: 16px;
+}
+
+.app-page-light {
+    background: #ffffff;
+    color: rgba(0, 0, 0, 0.88);
+}
+
+.app-page-dark {
+    background: #0b1220;
+    color: rgba(255, 255, 255, 0.88);
+}
+
+/* ===== 玩家界面 ===== */
+.game-root {
+    position: relative;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 8px 0 24px;
+}
+
+/* 右上角功能按钮 */
+.game-top-actions {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    left: auto;
+    z-index: 9999;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.top-icon-btn {
+    color: rgba(0, 0, 0, 0.72);
+}
+
+.app-page-dark .top-icon-btn {
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.top-icon-btn:hover {
+    color: rgba(0, 0, 0, 0.92);
+}
+
+.app-page-dark .top-icon-btn:hover {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+/* 中间信息 */
+.game-info {
+    text-align: center;
+    margin: 6px 0 14px;
+}
+
+.game-info-text {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.game-subinfo {
+    margin-top: 6px;
+    opacity: 0.9;
+    line-height: 1.6;
+}
+
+/* 棋盘 */
+.board {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    margin: 18px 0 18px;
+}
+
+.board-row {
+    display: grid;
+    grid-template-columns: repeat(14, 44px);
+    gap: 6px;
+    justify-content: center;
+}
+
+/* TileCell：统一轮廓与阴影 */
+.tile-cell {
+    width: 44px;
+    height: 60px;
+    padding: 2px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* 深色模式：增加“轮廓感”（outline + 更明显边框/阴影） */
+.app-page-dark .tile-cell {
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    outline: 1px solid rgba(255, 255, 255, 0.14);
+    outline-offset: 0px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+/* 判色 */
+.tile-cell-blue {
+    background: #1677ff;
+}
+
+.tile-cell-orange {
+    background: #fa8c16;
+}
+
+.tile-cell-gray {
+    background: #d9d9d9;
+}
+
+.tile-cell-empty {
+    background: #ffffff;
+}
+
+/* 深色模式：麻将牌“背景染黑”（这里指牌格底色变暗） */
+.app-page-dark .tile-cell-empty {
+    background: #111827; /* 深灰黑 */
+}
+
+.app-page-dark .tile-cell-gray {
+    background: #374151; /* 灰牌也调暗，避免刺眼 */
+}
+
+/* 输入区 */
+.input-area {
+    display: block;
+}
+
+.input-main {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* 牌键盘 */
+.tile-keyboard {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tile-keyboard-grid {
+    display: grid;
+    grid-template-columns: repeat(9, 44px);
+    gap: 8px;
+    justify-content: center;
+}
+
+.tile-btn {
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+.tile-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+/* 键盘按钮：确保整行居中 */
+.keyboard-actions {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 6px;
+}
+
+/* 文本模式输入条：限制最大宽度不超过 14 张牌连起来 */
+.text-input-bar {
+    width: min(700px, 100%); /* ≈ 14*(44) + 13*(6) */
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 110px;
+    gap: 10px;
+    align-items: center;
+}
+
+/* ===== 设置弹窗：两项列表 ===== */
+.settings-list {
+    padding-top: 4px;
+}
+
+.settings-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 4px;
+}
+
+.settings-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.settings-title {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.settings-desc {
+    font-size: 14px;
+    opacity: 0.75;
+}
+
+.settings-divider {
+    height: 1px;
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.app-page-dark .settings-divider {
+    background: rgba(255, 255, 255, 0.10);
+}
+
+/* 点选牌：hover 高亮 */
+.tile-btn:hover .tile-cell {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+    outline: 2px solid rgba(22, 119, 255, 0.55);
+    outline-offset: 0px;
+}
+
+.app-page-dark .tile-btn:hover .tile-cell {
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.55);
+    outline: 2px solid rgba(255, 255, 255, 0.22);
+}
+
+/* 棋盘格子：用于控制最后一列的间距与高亮 */
+.board-cell {
+    display: flex;
+}
+
+.board-cell-last {
+    margin-left: 10px;
+}
+
+.board-cell-last .tile-cell {
+    outline: 2px solid rgba(22, 119, 255, 0.60);
+    outline-offset: 0px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+
+.app-page-dark .board-cell-last .tile-cell {
+    outline: 2px solid rgba(22, 119, 255, 0.75);
+    outline-offset: 0px;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.55),
+    0 0 0 2px rgba(22, 119, 255, 0.18),
+    0 0 18px rgba(22, 119, 255, 0.22);
+}
+
+/* =========================================================
+   End Summary Modal (Modal.info) 修复：
+   1) 去白框：覆盖 ant-modal-container（你截图确认白底在这里）
+   2) 真居中：去掉 confirm icon 占位，让内容列不再偏右
+   ========================================================= */
+
+/* 1) 白框根源：ant-modal-container 默认白底 -> 强制改深色 */
+.mh-end-modal-dark .ant-modal-container {
+    background: #0b1220 !important;
+    border: 1px solid #0b1220 !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75) !important;
+}
+
+/* 同时保证 content 也一致（防止某些版本 container->content 之间仍露白） */
+.mh-end-modal-dark .ant-modal-content {
+    background: #0b1220 !important;
+    border: 1px solid #0b1220 !important;
+}
+
+/* header/body/footer 全部统一 */
+.mh-end-modal-dark .ant-modal-header,
+.mh-end-modal-dark .ant-modal-body,
+.mh-end-modal-dark .ant-modal-footer {
+    background: #0b1220 !important;
+    color: rgba(255, 255, 255, 0.88) !important;
+    border-color: #0b1220 !important;
+}
+
+/* 标题/文本颜色 */
+.mh-end-modal-dark .ant-modal-title,
+.mh-end-modal-dark .ant-modal-confirm-title,
+.mh-end-modal-dark .ant-modal-confirm-content {
+    color: rgba(255, 255, 255, 0.88) !important;
+}
+
+/* 关闭按钮、info 图标颜色 */
+.mh-end-modal-dark .ant-modal-close,
+.mh-end-modal-dark .ant-modal-close-x,
+.mh-end-modal-dark .ant-modal-confirm-info .anticon {
+    color: rgba(255, 255, 255, 0.78) !important;
+}
+
+/* 2) “看起来不居中”的根因：confirm 默认 icon + content 的 flex 布局
+   把 icon 去掉，并把 body 改成 block，让内容占满整行 */
+.mh-end-modal .ant-modal-confirm-body {
+    display: block !important;
+}
+
+.mh-end-modal .ant-modal-confirm-icon {
+    display: none !important;
+}
+
+/* confirm content 默认会留出给 icon 的 margin-left，强制清零 */
+.mh-end-modal .ant-modal-confirm-content,
+.mh-end-modal .ant-modal-confirm-title {
+    margin-left: 0 !important;
+}
+
+/* 答案区：强制居中 + 固定 7 列 */
+.mh-answer-wrap {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.mh-answer-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 44px);
+    gap: 6px;
+    justify-content: center;
+}

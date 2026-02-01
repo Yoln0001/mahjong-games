@@ -111,8 +111,9 @@ def _ensure_user(game, user_id: str) -> bool:
 def start_game(req: StartReq) -> ApiResponse:
     g = repo.create(hand_index=req.handIndex, max_guess=req.maxGuess)
 
-    # 这里修改 users，必须写回：用 update 强制写回
-    repo.update(g.game_id, lambda game: _ensure_user(game, req.userId))
+    # 这里修改 users，必须写回：start 阶段不走 update 的读路径，直接二次 save 覆盖写回
+    _ensure_user(g, req.userId)
+    repo.save(g)
 
     log.info("game_start gameId=%s userId=%s maxGuess=%s", g.game_id, req.userId, g.max_guess)
 
@@ -132,6 +133,7 @@ def start_game(req: StartReq) -> ApiResponse:
         },
         error=None,
     )
+
 
 
 @router.post("/game/{game_id}/guess", response_model=ApiResponse)

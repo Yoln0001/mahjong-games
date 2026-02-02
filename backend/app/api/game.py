@@ -111,7 +111,6 @@ def _ensure_user(game, user_id: str) -> bool:
 def start_game(req: StartReq) -> ApiResponse:
     g = repo.create(hand_index=req.handIndex, max_guess=req.maxGuess)
 
-    # 这里修改 users，必须写回：start 阶段不走 update 的读路径，直接二次 save 覆盖写回
     _ensure_user(g, req.userId)
     repo.save(g)
 
@@ -135,15 +134,19 @@ def start_game(req: StartReq) -> ApiResponse:
     )
 
 
-
 @router.post("/game/{game_id}/guess", response_model=ApiResponse)
 def guess(game_id: str, req: GuessReq) -> ApiResponse:
     try:
+        # 添加日志打印 repo 配置
+        log.info("guess repo_type=%s prefix=%s", getattr(repo, "repo_type", "N/A"), getattr(repo, "_prefix", "N/A"))
+
         def updater(game):
             return evaluate_guess(game=game, user_id=req.userId, guess_str=req.guess)
 
         ok, err = repo.update(game_id, updater)
+
     except KeyError:
+        log.warning("guess_key_error gameId=%s userId=%s", game_id, req.userId)  # 添加失败时日志
         return ApiResponse(ok=False, data=None, error=ApiError(code="GAME_NOT_FOUND", message="gameId 不存在"))
 
     if err:
@@ -186,7 +189,6 @@ def guess(game_id: str, req: GuessReq) -> ApiResponse:
             "finish": ok.finish,
             "win": ok.win,
 
-            # ✅ 统计字段：后端权威时间戳/次数
             "createdAt": ok.created_at,
             "hitCountValid": getattr(p, "hit_count_valid", None),
             "gameCreatedAt": getattr(g, "created_at", None),
@@ -198,7 +200,6 @@ def guess(game_id: str, req: GuessReq) -> ApiResponse:
                 seat_wind=getattr(getattr(g, "hand", None), "seat_wind", 1),
                 tsumo=bool(getattr(getattr(g, "hand", None), "tsumo", False)),
             ),
-
             **answer_payload,
         },
         error=None,

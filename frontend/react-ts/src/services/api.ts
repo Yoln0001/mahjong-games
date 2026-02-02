@@ -1,7 +1,12 @@
 import axios from "axios";
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+const envBase = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/+$/, "");
 
+const baseURL = envBase || (import.meta.env.DEV ? "http://127.0.0.1:8000" : "");
+
+if (!baseURL) {
+  throw new Error("VITE_API_BASE_URL is required in production build.");
+}
 export const api = axios.create({
     baseURL,
     timeout: 10000,

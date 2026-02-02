@@ -14,7 +14,7 @@ import type {
 /**
  * 可配置 API 前缀：
  * - 如果后端 include_router(prefix="/api")：用默认 "/api"
- * - 如果后端无前缀：在 .env 设置 VITE_API_PREFIX=
+ * - 如果后端无前缀：在 .env.local 设置 VITE_API_PREFIX=
  */
 const API_PREFIX = (import.meta as any).env?.VITE_API_PREFIX ?? "/api";
 

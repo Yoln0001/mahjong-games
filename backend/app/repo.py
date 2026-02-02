@@ -11,7 +11,7 @@ import os
 import time
 from dataclasses import asdict
 from typing import Dict, Optional, Protocol, Callable, TypeVar
-
+import logging
 import redis  # pip install redis
 
 from .domain import (
@@ -23,7 +23,8 @@ from .domain import (
 )
 
 T = TypeVar("T")
-
+log = logging.getLogger("mahjong.repo")
+DEBUG_REPO_LOG = os.getenv("DEBUG_REPO_LOG", "").lower() in ("1", "true", "yes", "on")
 
 # -------------------------
 # 序列化 / 反序列化（向后兼容）
@@ -35,13 +36,28 @@ def game_to_dict(game: GameState) -> dict:
 
 def _build_hand(hand_d: Optional[dict]) -> HandResultData:
     hand_d = hand_d or {}
-    # 给缺失字段提供默认值，保证老数据可读
+
+    # ✅ 新增：必填字段的向后兼容默认值
+    round_wind = int(hand_d.get("round_wind", 1))
+    seat_wind = int(hand_d.get("seat_wind", 1))
+    wind_raw = hand_d.get("wind_raw")
+    if not wind_raw:
+        # wind_raw 是两位数字字符串，例如 "23"
+        wind_raw = f"{round_wind}{seat_wind}"
+
     return HandResultData(
         tiles_ascii_13=hand_d.get("tiles_ascii_13") or [],
         win_tile=hand_d.get("win_tile") or "",
         tsumo=bool(hand_d.get("tsumo", False)),
+
+        # ✅ 补齐必填字段
+        round_wind=round_wind,
+        seat_wind=seat_wind,
+        wind_raw=wind_raw,
+
         raw_14=hand_d.get("raw_14") or "",
         hand_index=int(hand_d.get("hand_index", 0)),
+
         han=int(hand_d.get("han", 0)),
         fu=int(hand_d.get("fu", 0)),
         cost=int(hand_d.get("cost", 0)),
@@ -49,6 +65,7 @@ def _build_hand(hand_d: Optional[dict]) -> HandResultData:
         han_tip=hand_d.get("han_tip") or "",
         tip=hand_d.get("tip") or "",
     )
+
 
 
 def game_from_dict(d: dict) -> GameState:
@@ -182,13 +199,29 @@ class RedisGameRepo:
         return g
 
     def get(self, game_id: str) -> Optional[GameState]:
-        raw = self._r.get(self._key(game_id))
-        if not raw:
+        key = self._key(game_id)
+        raw = self._r.get(key)
+        if raw is None:
             return None
+
         try:
             d = json.loads(raw)
             return game_from_dict(d)
-        except Exception:
+        except Exception as e:
+            if DEBUG_REPO_LOG:
+                log.exception(
+                    "redis_get_decode_failed gameId=%s key=%s raw_head=%s",
+                    game_id,
+                    key,
+                    raw[:80],
+                )
+            else:
+                log.error(
+                    "redis_get_decode_failed gameId=%s key=%s exc=%s",
+                    game_id,
+                    key,
+                    type(e).__name__,
+                )
             return None
 
     def save(self, game: GameState) -> None:
@@ -201,7 +234,19 @@ class RedisGameRepo:
     def update(self, game_id: str, updater: Callable[[GameState], T]) -> T:
         g = self.get(game_id)
         if not g:
+            key = self._key(game_id)
+            try:
+                exists = int(self._r.exists(key))
+                ttl = self._r.ttl(key)
+                if exists == 1:
+                    log.warning("redis_update_not_found_but_exists gameId=%s key=%s ttl=%s", game_id, key, ttl)
+                else:
+                    log.info("redis_update_not_found gameId=%s key=%s", game_id, key)
+            except Exception:
+                log.exception("redis_update_not_found_check_failed gameId=%s key=%s", game_id, key)
+
             raise KeyError("GAME_NOT_FOUND")
+
         result = updater(g)
         # 强制写回：所有修改都必须通过 update 才能持久化
         self.save(g)

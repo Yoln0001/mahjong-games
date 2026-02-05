@@ -12,11 +12,59 @@ import type {
 } from "../types/api";
 
 /**
- * 可配置 API 前缀：
- * - 如果后端 include_router(prefix="/api")：用默认 "/api"
+ * 全局 API 基础前缀（通常用于后端 include_router(prefix="/api") 的场景）
+ * - 默认 "/api"
  * - 如果后端无前缀：在 .env.local 设置 VITE_API_PREFIX=
  */
-const API_PREFIX = (import.meta as any).env?.VITE_API_PREFIX ?? "/api";
+const API_PREFIX: string = (import.meta as any).env?.VITE_API_PREFIX ?? "/api";
+
+/**
+ * 业务模块前缀（建议后端分别挂载）
+ * - handle：/handle
+ * - llk：/llk
+ *
+ * 可在 .env.local 覆盖：
+ *   VITE_HANDLE_PREFIX=/game   （如果你后端暂时仍用 /game）
+ *   VITE_LLK_PREFIX=/llk
+ */
+const HANDLE_PREFIX: string = (import.meta as any).env?.VITE_HANDLE_PREFIX ?? "/handle";
+const LLK_PREFIX: string = (import.meta as any).env?.VITE_LLK_PREFIX ?? "/llk";
+
+/** 安全拼接路径，避免出现 // 或缺少 / */
+function joinPath(...parts: string[]): string {
+    const cleaned = parts
+        .filter((p) => p != null && p !== "")
+        .map((p, idx) => {
+            // 保留第一个 part 的可能空字符串（用于 modulePrefix 为空）
+            let s = String(p);
+            if (idx === 0) {
+                // 首段：去掉尾部 /
+                s = s.replace(/\/+$/g, "");
+            } else {
+                // 中间段：去掉首尾 /
+                s = s.replace(/^\/+|\/+$/g, "");
+            }
+            return s;
+        })
+        .filter((p) => p !== "");
+
+    // 特殊：如果全都空，返回空字符串
+    if (cleaned.length === 0) return "";
+
+    const result = cleaned.join("/");
+    // 确保以 / 开头（除非 result 本身就是空）
+    return result.startsWith("/") ? result : `/${result}`;
+}
+
+/**
+ * 构造最终请求路径：
+ * - API_PREFIX（例如 /api）
+ * - modulePrefix（例如 /handle 或 /llk；若传 "" 则表示无模块前缀）
+ * - path（例如 /start）
+ */
+function buildUrl(modulePrefix: string, path: string): string {
+    return joinPath(API_PREFIX, modulePrefix, path);
+}
 
 function assertApiOk<T>(payload: ApiResponse<T>): T {
     if (!payload || typeof payload !== "object") {
@@ -33,12 +81,12 @@ function assertApiOk<T>(payload: ApiResponse<T>): T {
 }
 
 /**
- * 创建对局：POST {prefix}/game/start
- * 注意：后端不会返回 userId，userId 必须由前端生成并保存。:contentReference[oaicite:8]{index=8}
+ * 创建对局：POST {API_PREFIX}{HANDLE_PREFIX}/start
+ * 注意：后端不会返回 userId，userId 必须由前端生成并保存。
  */
 export async function createGame(req: StartReq): Promise<CreateGameResponse> {
     const resp = await api.post<ApiResponse<StartGameData>>(
-        `${API_PREFIX}/game/start`,
+        buildUrl(HANDLE_PREFIX, "/start"),
         req
     );
 
@@ -51,28 +99,28 @@ export async function createGame(req: StartReq): Promise<CreateGameResponse> {
 }
 
 /**
- * 获取状态：GET {prefix}/game/{gameId}/status?userId=... :contentReference[oaicite:9]{index=9}
+ * 获取状态：GET {API_PREFIX}{HANDLE_PREFIX}/{gameId}/status?userId=...
  */
 export async function getState(
     gameId: string,
     userId: string
 ): Promise<GameStatusData> {
     const resp = await api.get<ApiResponse<GameStatusData>>(
-        `${API_PREFIX}/game/${encodeURIComponent(gameId)}/status`,
+        buildUrl(HANDLE_PREFIX, `/${encodeURIComponent(gameId)}/status`),
         { params: { userId } }
     );
     return assertApiOk(resp.data);
 }
 
 /**
- * 提交猜测：POST {prefix}/game/{gameId}/guess body={userId, guess} :contentReference[oaicite:10]{index=10}
+ * 提交猜测：POST {API_PREFIX}{HANDLE_PREFIX}/{gameId}/guess body={userId, guess}
  */
 export async function submitGuess(
     gameId: string,
     payload: GuessReq
 ): Promise<GuessData & { score?: number }> {
     const resp = await api.post<ApiResponse<GuessData>>(
-        `${API_PREFIX}/game/${encodeURIComponent(gameId)}/guess`,
+        buildUrl(HANDLE_PREFIX, `/${encodeURIComponent(gameId)}/guess`),
         payload
     );
     // 后端在 finish=true 时会额外返回 score（结算得分）。
@@ -81,28 +129,41 @@ export async function submitGuess(
 }
 
 /**
- * 重置对局：POST {prefix}/game/{gameId}/reset :contentReference[oaicite:11]{index=11}
+ * 重置对局：POST {API_PREFIX}{HANDLE_PREFIX}/{gameId}/reset
  */
 export async function resetGame(
     gameId: string,
     payload: ResetReq
 ): Promise<StartGameData> {
     const resp = await api.post<ApiResponse<StartGameData>>(
-        `${API_PREFIX}/game/${encodeURIComponent(gameId)}/reset`,
+        buildUrl(HANDLE_PREFIX, `/${encodeURIComponent(gameId)}/reset`),
         payload
     );
     return assertApiOk(resp.data);
 }
 
 /**
- * 健康检查（如果后端实现了 /health）
+ * 健康检查（通常是全局路由，不属于 handle/llk）
+ * GET {API_PREFIX}/health
  */
 export async function health(): Promise<HealthResponse> {
-    const resp = await api.get<ApiResponse<HealthResponse>>(`${API_PREFIX}/health`);
-    // health 的实现不在你提供的 game.py 中，这里做兼容：既支持 ApiResponse 包装，也支持直接返回
+    const resp = await api.get<ApiResponse<HealthResponse>>(buildUrl("", "/health"));
+    // health 的实现可能既支持 ApiResponse 包装，也支持直接返回
     const payload = resp.data as any;
     if (payload && typeof payload === "object" && "ok" in payload && "data" in payload) {
         return assertApiOk(payload);
     }
     return payload as HealthResponse;
 }
+
+/**
+ * 预留：后续 llk 接口可以在这里按同样规则扩展
+ * 示例：
+ *   buildUrl(LLK_PREFIX, "/start")
+ *   buildUrl(LLK_PREFIX, `/${gameId}/pick`)
+ */
+export const __prefixes = {
+    API_PREFIX,
+    HANDLE_PREFIX,
+    LLK_PREFIX,
+};

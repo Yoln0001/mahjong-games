@@ -4,7 +4,7 @@
 # @File : test_guess_rules
 # @Project : mahjong-handle-web
 import time
-from app.domain import (
+from app.modules.handle.domain import (
     GameState,
     HandResultData,
     evaluate_guess,

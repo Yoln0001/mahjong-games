@@ -7,12 +7,11 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from ..domain import UserProgress, evaluate_guess
-from .deps import log, repo
-from .schemas import ApiError, ApiResponse, GuessReq, ResetReq, StartReq
+from app.modules.handle.domain import UserProgress, evaluate_guess
+from app.api.deps import log, handle_repo
+from app.modules.handle.schemas import ApiError, ApiResponse, GuessReq, ResetReq, StartReq
 
 router = APIRouter()
-
 
 # -----------------------------
 # Hint builders (aligned with domain.HandResultData)
@@ -107,12 +106,13 @@ def _ensure_user(game, user_id: str) -> bool:
     return True
 
 
-@router.post("/game/start", response_model=ApiResponse)
+# ✅ 改动：去掉 /game 前缀，由 app/api/router.py 统一加 prefix="/game"
+@router.post("/start", response_model=ApiResponse)
 def start_game(req: StartReq) -> ApiResponse:
-    g = repo.create(hand_index=req.handIndex, max_guess=req.maxGuess)
+    g = handle_repo.create(hand_index=req.handIndex, max_guess=req.maxGuess)
 
     _ensure_user(g, req.userId)
-    repo.save(g)
+    handle_repo.save(g)
 
     log.info("game_start gameId=%s userId=%s maxGuess=%s", g.game_id, req.userId, g.max_guess)
 
@@ -134,51 +134,36 @@ def start_game(req: StartReq) -> ApiResponse:
     )
 
 
-@router.post("/game/{game_id}/guess", response_model=ApiResponse)
+# ✅ 改动：去掉 /game 前缀
+@router.post("/{game_id}/guess", response_model=ApiResponse)
 def guess(game_id: str, req: GuessReq) -> ApiResponse:
     try:
-        log.info("guess repo_type=%s prefix=%s", getattr(repo, "repo_type", "N/A"), getattr(repo, "_prefix", "N/A"))
+        log.info("guess repo_type=%s prefix=%s", getattr(handle_repo, "repo_type", "N/A"), getattr(handle_repo, "_prefix", "N/A"))
 
         def updater(game):
             return evaluate_guess(game=game, user_id=req.userId, guess_str=req.guess)
 
-        ok, err = repo.update(game_id, updater)
+        ok, err = handle_repo.update(game_id, updater)
 
     except KeyError:
         log.warning("guess_key_error gameId=%s userId=%s", game_id, req.userId)
         return ApiResponse(ok=False, data=None, error=ApiError(code="GAME_NOT_FOUND", message="gameId 不存在"))
 
     if err:
-        log.info(
-            "guess_invalid gameId=%s userId=%s code=%s",
-            game_id,
-            req.userId,
-            err.code.value,
-        )
-        return ApiResponse(
-            ok=False,
-            data=None,
-            error=ApiError(code=err.code.value, message=err.message, detail=err.detail),
-        )
+        log.info("guess_invalid gameId=%s userId=%s code=%s", game_id, req.userId, err.code.value)
+        return ApiResponse(ok=False, data=None, error=ApiError(code=err.code.value, message=err.message, detail=err.detail))
 
     assert ok is not None
 
-    g = repo.get(game_id)
+    g = handle_repo.get(game_id)
     p = g.users.get(req.userId) if g else None
 
     log.info(
         "guess_ok gameId=%s userId=%s remain=%s finish=%s win=%s score=%s",
-        game_id,
-        req.userId,
-        ok.remain,
-        ok.finish,
-        ok.win,
-        getattr(p, "score", None),
+        game_id, req.userId, ok.remain, ok.finish, ok.win, getattr(p, "score", None),
     )
 
     answer_payload = _build_answer_payload(g) if (ok.finish and g is not None) else {}
-
-    # ✅ 如果结算，返回 score（失败也会是 0）
     score_payload = {"score": ok.score} if ok.finish else {}
 
     return ApiResponse(
@@ -189,11 +174,9 @@ def guess(game_id: str, req: GuessReq) -> ApiResponse:
             "remain": ok.remain,
             "finish": ok.finish,
             "win": ok.win,
-
             "createdAt": ok.created_at,
             "hitCountValid": getattr(p, "hit_count_valid", None),
             "gameCreatedAt": getattr(g, "created_at", None),
-
             "hint": _build_hint(
                 tip=ok.tip,
                 han_tip=ok.han_tip,
@@ -208,9 +191,10 @@ def guess(game_id: str, req: GuessReq) -> ApiResponse:
     )
 
 
-@router.get("/game/{game_id}/status", response_model=ApiResponse)
+# ✅ 改动：去掉 /game 前缀
+@router.get("/{game_id}/status", response_model=ApiResponse)
 def status(game_id: str, userId: str) -> ApiResponse:
-    g = repo.get(game_id)
+    g = handle_repo.get(game_id)
     if not g:
         return ApiResponse(ok=False, data=None, error=ApiError(code="GAME_NOT_FOUND", message="gameId 不存在"))
 
@@ -237,10 +221,7 @@ def status(game_id: str, userId: str) -> ApiResponse:
             },
         )
 
-    history = [
-        {"guessTiles14": e.guess_tiles_14, "colors14": e.colors_14, "createdAt": e.created_at}
-        for e in p.history
-    ]
+    history = [{"guessTiles14": e.guess_tiles_14, "colors14": e.colors_14, "createdAt": e.created_at} for e in p.history]
 
     answer_payload = _build_answer_payload(g) if p.finished else {}
     score_payload = {"score": p.score} if p.finished else {}
@@ -269,12 +250,13 @@ def status(game_id: str, userId: str) -> ApiResponse:
     )
 
 
-@router.post("/game/{game_id}/reset", response_model=ApiResponse)
+# ✅ 改动：去掉 /game 前缀
+@router.post("/{game_id}/reset", response_model=ApiResponse)
 def reset(game_id: str, req: ResetReq) -> ApiResponse:
-    repo.delete(game_id)
-    g = repo.create(hand_index=req.handIndex, max_guess=req.maxGuess)
+    handle_repo.delete(game_id)
+    g = handle_repo.create(hand_index=req.handIndex, max_guess=req.maxGuess)
 
-    repo.update(g.game_id, lambda game: _ensure_user(game, req.userId))
+    handle_repo.update(g.game_id, lambda game: _ensure_user(game, req.userId))
 
     log.info("game_reset oldGameId=%s newGameId=%s userId=%s", game_id, g.game_id, req.userId)
 

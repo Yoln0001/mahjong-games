@@ -7,11 +7,15 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from .game import router as game_router
+from app.modules.handle.api import router as handle_router
 from .health import router as health_router
 
 router = APIRouter()
 
-# Split routers by business domain for maintainability.
-router.include_router(health_router, tags=["health"])
-router.include_router(game_router, tags=["game"])
+router.include_router(health_router, prefix="/health", tags=["health"])
+router.include_router(handle_router, prefix="/handle", tags=["handle"])
+
+
+# 未来新增 llk 后，你只需要加一行：
+# from app.modules.llk.api import router as llk_router
+# router.include_router(llk_router, prefix="/llk", tags=["llk"])

@@ -210,7 +210,7 @@ class GameState:
 # 抽题：复用 handler.py 的 hands.txt 题库逻辑
 # -------------------------
 
-_ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
+_ASSETS_DIR = Path(__file__).resolve().parent / "assets"
 
 _WIND_NAME = {1: "东", 2: "南", 3: "西", 4: "北"}
 

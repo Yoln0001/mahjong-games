@@ -7,10 +7,11 @@ from __future__ import annotations
 
 import logging
 
-from ..repo import create_repo_from_env
+from app.modules.handle.repo import create_handle_repo_from_env
+from app.modules.llk.repo import create_llk_repo_from_env
 
-# NOTE: keep a single repo instance for the whole process.
-# If you later need per-request lifecycle, replace this with FastAPI dependencies.
-repo = create_repo_from_env()
+# NOTE: keep single repo instances for the whole process.
+handle_repo = create_handle_repo_from_env()
+llk_repo = create_llk_repo_from_env()
 
 log = logging.getLogger("mahjong.api")

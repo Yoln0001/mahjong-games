@@ -7,8 +7,8 @@
 import os
 import pytest
 
-from app.repo import RedisGameRepo
-from app.domain import evaluate_guess
+from app.modules.handle.repo import RedisGameRepo
+from app.modules.handle.domain import evaluate_guess
 
 
 REDIS_URL = os.getenv("REDIS_URL")

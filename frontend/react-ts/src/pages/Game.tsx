@@ -39,9 +39,14 @@ type PersistedState = {
   lastGuessAt?: number;
   hitCountValid?: number;
 
+  // ✅ 结算得分（后端仅在 finish=true 时返回；status 也会回传以便刷新恢复）
+  score?: number;
+
   answerTiles14?: string[];
   answerStr?: string;
 };
+
+type GuessDataWithScore = GuessData & { score?: number };
 
 const TILE_KEYBOARD: TileId[] = [
   "1m","2m","3m","4m","5m","6m","7m","8m","9m",
@@ -160,6 +165,10 @@ export default function Game() {
     typeof persisted0?.hitCountValid === "number" ? persisted0.hitCountValid : (persisted0?.rows?.length ?? 0)
   );
 
+  const [score, setScore] = useState<number | null>(
+    typeof (persisted0 as any)?.score === "number" ? ((persisted0 as any).score as number) : null
+  );
+
   const [infoOpen, setInfoOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [modeOpen, setModeOpen] = useState(false);
@@ -181,6 +190,7 @@ export default function Game() {
       gameCreatedAt: typeof next.gameCreatedAt === "number" ? next.gameCreatedAt : (gameCreatedAt ?? undefined),
       lastGuessAt: typeof next.lastGuessAt === "number" ? next.lastGuessAt : (lastGuessAt ?? undefined),
       hitCountValid: typeof next.hitCountValid === "number" ? next.hitCountValid : hitCountValid,
+      score: typeof (next as any).score === "number" ? ((next as any).score as number) : (score ?? undefined),
       answerTiles14: Array.isArray((next as any).answerTiles14)
         ? ((next as any).answerTiles14 as string[])
         : (answerTiles14 ?? undefined),
@@ -197,7 +207,7 @@ export default function Game() {
     }));
   }
 
-  function showEndSummary(opts: { win: boolean; hitCountValid: number; durationSec: number; answerTiles14?: string[] }) {
+  function showEndSummary(opts: { win: boolean; hitCountValid: number; durationSec: number; score?: number; answerTiles14?: string[] }) {
     const isDark = themeMode === "dark";
 
     const titleNode = (
@@ -206,7 +216,6 @@ export default function Game() {
       </span>
     );
 
-    // 这里保留 styles 以增强一致性，但“白边框”的根治靠 styles.css 覆盖 .ant-modal-content
     const darkStyles = isDark
       ? {
           content: {
@@ -233,7 +242,6 @@ export default function Game() {
     setEndSummaryOpen(true);
 
     Modal.info({
-      // ✅ 关键：给 Confirm 弹窗一个稳定的 hook class，便于 CSS 覆盖“外层白边框”
       wrapClassName: isDark ? "mh-end-modal mh-end-modal-dark" : "mh-end-modal",
       className: isDark ? "mh-end-modal mh-end-modal-dark" : "mh-end-modal",
 
@@ -249,12 +257,12 @@ export default function Game() {
         <div className={isDark ? "app-page-dark" : "app-page-light"} style={{ lineHeight: 1.9 }}>
           <div>合法提交次数：<b>{opts.hitCountValid}</b></div>
           <div>游玩时间：<b>{formatDurationMMSS(opts.durationSec)}</b></div>
+          <div>得分：<b>{typeof opts.score === "number" ? opts.score : 0}</b></div>
 
           {!opts.win && Array.isArray(opts.answerTiles14) && opts.answerTiles14.length === COLS && (
             <>
               <div style={{ marginTop: 12 }}>正确答案：</div>
 
-              {/* ✅ 居中：外层 flex 居中，内层 grid 固定 7 列 */}
               <div className="mh-answer-wrap">
                 <div className="mh-answer-grid">
                   {opts.answerTiles14.map((t, i) => (
@@ -310,6 +318,9 @@ export default function Game() {
     setLastGuessAt(lastGuessAtNext);
     setHitCountValid(hitCountValidNext);
 
+    const scoreNext = typeof statusAny?.score === "number" ? statusAny.score : null;
+    setScore(scoreNext);
+
     setCurrentTiles([]);
 
     persistSnapshot({
@@ -321,6 +332,7 @@ export default function Game() {
       gameCreatedAt: gameCreatedAtNext ?? undefined,
       lastGuessAt: lastGuessAtNext ?? undefined,
       hitCountValid: hitCountValidNext,
+      score: scoreNext ?? undefined,
       answerTiles14: (!!statusAny.finish && !statusAny.win && restoredAnswerTiles14?.length === COLS) ? restoredAnswerTiles14 : undefined,
       answerStr: typeof statusAny.answerStr === "string" ? statusAny.answerStr : undefined,
     });
@@ -341,6 +353,7 @@ export default function Game() {
       setGameCreatedAt(null);
       setLastGuessAt(null);
       setHitCountValid(0);
+      setScore(null);
 
       const res = await createGame({ userId });
       const resAny = res as any;
@@ -364,6 +377,7 @@ export default function Game() {
         gameCreatedAt: createdAt ?? undefined,
         lastGuessAt: undefined,
         hitCountValid: 0,
+        score: undefined,
         answerTiles14: undefined,
         answerStr: undefined,
       });
@@ -429,7 +443,7 @@ export default function Game() {
     setCurrentTiles([]);
   }, []);
 
-  function applyGuessResult(res: GuessData) {
+  function applyGuessResult(res: GuessDataWithScore) {
     const resAny = res as any;
 
     const tiles = resAny.guessTiles14 ?? [];
@@ -438,6 +452,8 @@ export default function Game() {
     const nextFinish = !!resAny.finish;
     const nextWin = !!resAny.win;
     const nextHint = resAny.hint;
+
+    const scoreNext = typeof resAny?.score === "number" ? (resAny.score as number) : null;
 
     const answerTiles14Next = Array.isArray(resAny.answerTiles14) ? (resAny.answerTiles14 as string[]) : null;
     const answerStrNext = typeof resAny.answerStr === "string" ? (resAny.answerStr as string) : undefined;
@@ -465,6 +481,7 @@ export default function Game() {
         gameCreatedAt: (gameCreatedAtNext ?? undefined),
         lastGuessAt: lastGuessAtNext,
         hitCountValid: hitCountValidNext,
+        score: (nextFinish && typeof scoreNext === "number") ? scoreNext : undefined,
         answerTiles14: (nextFinish && !nextWin && answerTiles14Next?.length === COLS) ? answerTiles14Next : undefined,
         answerStr: (nextFinish && !nextWin && answerStrNext) ? answerStrNext : undefined,
       });
@@ -488,12 +505,17 @@ export default function Game() {
     setLastGuessAt(lastGuessAtNext);
     setHitCountValid(hitCountValidNext);
 
+    if (nextFinish && typeof scoreNext === "number") {
+      setScore(scoreNext);
+    }
+
     if (!finish && nextFinish) {
       const durationSec = computeDurationSec(gameCreatedAtNext ?? null, lastGuessAtNext ?? null);
       showEndSummary({
         win: nextWin,
         hitCountValid: hitCountValidNext,
         durationSec,
+        score: typeof scoreNext === "number" ? scoreNext : undefined,
         answerTiles14: (!nextWin ? (answerTiles14Next ?? undefined) : undefined),
       });
     }

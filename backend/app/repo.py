@@ -91,12 +91,17 @@ def game_from_dict(d: dict) -> GameState:
                     created_at=float(ed.get("created_at", ed.get("createdAt", time.time()))),
                 )
             )
-
+        # ✅ 新增：结算字段向后兼容
+        finished_at_raw = pd.get("finished_at", pd.get("finishedAt", None))
+        finished_at = float(finished_at_raw) if finished_at_raw is not None else None
         users[uid] = UserProgress(
             hit_count_valid=int(pd.get("hit_count_valid", pd.get("hitCountValid", 0))),
             history=hist,
             finished=bool(pd.get("finished", False)),
             win=bool(pd.get("win", False)),
+            # ✅ 新增字段（旧数据缺失时给默认值）
+            score=int(pd.get("score", 0)),
+            finished_at=finished_at,
         )
 
     return GameState(

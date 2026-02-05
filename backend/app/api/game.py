@@ -137,7 +137,6 @@ def start_game(req: StartReq) -> ApiResponse:
 @router.post("/game/{game_id}/guess", response_model=ApiResponse)
 def guess(game_id: str, req: GuessReq) -> ApiResponse:
     try:
-        # 添加日志打印 repo 配置
         log.info("guess repo_type=%s prefix=%s", getattr(repo, "repo_type", "N/A"), getattr(repo, "_prefix", "N/A"))
 
         def updater(game):
@@ -146,7 +145,7 @@ def guess(game_id: str, req: GuessReq) -> ApiResponse:
         ok, err = repo.update(game_id, updater)
 
     except KeyError:
-        log.warning("guess_key_error gameId=%s userId=%s", game_id, req.userId)  # 添加失败时日志
+        log.warning("guess_key_error gameId=%s userId=%s", game_id, req.userId)
         return ApiResponse(ok=False, data=None, error=ApiError(code="GAME_NOT_FOUND", message="gameId 不存在"))
 
     if err:
@@ -164,21 +163,23 @@ def guess(game_id: str, req: GuessReq) -> ApiResponse:
 
     assert ok is not None
 
-    # 读取题目元信息（场风/自风/自摸）用于构造 hint
     g = repo.get(game_id)
     p = g.users.get(req.userId) if g else None
 
-    # 关键日志：成功提交
     log.info(
-        "guess_ok gameId=%s userId=%s remain=%s finish=%s win=%s",
+        "guess_ok gameId=%s userId=%s remain=%s finish=%s win=%s score=%s",
         game_id,
         req.userId,
         ok.remain,
         ok.finish,
         ok.win,
+        getattr(p, "score", None),
     )
 
     answer_payload = _build_answer_payload(g) if (ok.finish and g is not None) else {}
+
+    # ✅ 如果结算，返回 score（失败也会是 0）
+    score_payload = {"score": ok.score} if ok.finish else {}
 
     return ApiResponse(
         ok=True,
@@ -200,6 +201,7 @@ def guess(game_id: str, req: GuessReq) -> ApiResponse:
                 seat_wind=getattr(getattr(g, "hand", None), "seat_wind", 1),
                 tsumo=bool(getattr(getattr(g, "hand", None), "tsumo", False)),
             ),
+            **score_payload,
             **answer_payload,
         },
         error=None,
@@ -219,7 +221,7 @@ def status(game_id: str, userId: str) -> ApiResponse:
             data={
                 "gameId": g.game_id,
                 "maxGuess": g.max_guess,
-                "createdAt": g.created_at,  # ✅ 游戏开始时间戳（秒）
+                "createdAt": g.created_at,
                 "hitCountValid": 0,
                 "remain": g.max_guess,
                 "finish": False,
@@ -241,13 +243,14 @@ def status(game_id: str, userId: str) -> ApiResponse:
     ]
 
     answer_payload = _build_answer_payload(g) if p.finished else {}
+    score_payload = {"score": p.score} if p.finished else {}
 
     return ApiResponse(
         ok=True,
         data={
             "gameId": g.game_id,
             "maxGuess": g.max_guess,
-            "createdAt": g.created_at,  # ✅ 游戏开始时间戳（秒）
+            "createdAt": g.created_at,
             "hitCountValid": p.hit_count_valid,
             "remain": max(g.max_guess - p.hit_count_valid, 0),
             "finish": p.finished,
@@ -260,7 +263,7 @@ def status(game_id: str, userId: str) -> ApiResponse:
                 seat_wind=getattr(g.hand, "seat_wind", 1),
                 tsumo=bool(getattr(g.hand, "tsumo", False)),
             ),
-
+            **score_payload,
             **answer_payload,
         },
     )

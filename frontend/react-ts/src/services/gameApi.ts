@@ -70,12 +70,14 @@ export async function getState(
 export async function submitGuess(
     gameId: string,
     payload: GuessReq
-): Promise<GuessData> {
+): Promise<GuessData & { score?: number }> {
     const resp = await api.post<ApiResponse<GuessData>>(
         `${API_PREFIX}/game/${encodeURIComponent(gameId)}/guess`,
         payload
     );
-    return assertApiOk(resp.data);
+    // 后端在 finish=true 时会额外返回 score（结算得分）。
+    // 这里用交叉类型兼容，避免必须立刻改动 ../types/api 中的 GuessData 定义。
+    return assertApiOk(resp.data) as GuessData & { score?: number };
 }
 
 /**

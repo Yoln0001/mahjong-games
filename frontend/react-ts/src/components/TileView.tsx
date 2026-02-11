@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { normalizeToTileId, ThemeMode, tileIdToSvgUrl, tileIdToUnicode, TileId } from "../constants/tiles";
+import { useThemeStyle } from "../App";
 
 export type TileRenderMode = "svg" | "unicode"; // 将来你换 PNG/Canvas 也可在这里扩展
 
@@ -34,10 +35,14 @@ export default function TileView(props: TileViewProps) {
         return tileIdToUnicode(normalized);
     }, [normalized, tile]);
 
+    const { themeStyle } = useThemeStyle();
+    const effectiveThemeMode: ThemeMode =
+        themeStyle === "noir" || themeStyle === "arcade" ? "dark" : "light";
+
     const svgUrl = useMemo(() => {
         if (!normalized) return null;
-        return tileIdToSvgUrl(normalized as TileId, themeMode);
-    }, [normalized, themeMode]);
+        return tileIdToSvgUrl(normalized as TileId, effectiveThemeMode);
+    }, [normalized, effectiveThemeMode]);
 
     // 统一牌容器尺寸：建议高度略大于宽度
     const style: React.CSSProperties = {

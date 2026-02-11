@@ -8,14 +8,11 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.modules.handle.api import router as handle_router
+from app.modules.link.api import router as link_router
 from .health import router as health_router
 
 router = APIRouter()
 
 router.include_router(health_router, prefix="/health", tags=["health"])
 router.include_router(handle_router, prefix="/handle", tags=["handle"])
-
-
-# 未来新增 llk 后，你只需要加一行：
-# from app.modules.llk.api import router as llk_router
-# router.include_router(llk_router, prefix="/llk", tags=["llk"])
+router.include_router(link_router, prefix="/link", tags=["link"])

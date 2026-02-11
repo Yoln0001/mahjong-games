@@ -1,4 +1,4 @@
-import { api } from "./api";
+﻿import { api } from "./api";
 import type {
     ApiResponse,
     CreateGameResponse,
@@ -9,6 +9,7 @@ import type {
     ResetReq,
     StartReq,
     StartGameData,
+    AnswerData,
 } from "../types/api";
 
 /**
@@ -21,16 +22,13 @@ const API_PREFIX: string = (import.meta as any).env?.VITE_API_PREFIX ?? "/api";
 /**
  * 业务模块前缀（建议后端分别挂载）
  * - handle：/handle
- * - llk：/llk
  *
  * 可在 .env.local 覆盖：
  *   VITE_HANDLE_PREFIX=/game   （如果你后端暂时仍用 /game）
- *   VITE_LLK_PREFIX=/llk
  */
 const HANDLE_PREFIX: string = (import.meta as any).env?.VITE_HANDLE_PREFIX ?? "/handle";
-const LLK_PREFIX: string = (import.meta as any).env?.VITE_LLK_PREFIX ?? "/llk";
 
-/** 安全拼接路径，避免出现 // 或缺少 / */
+/** 安全拼接路径，避免出现重复 / 或缺少 / */
 function joinPath(...parts: string[]): string {
     const cleaned = parts
         .filter((p) => p != null && p !== "")
@@ -38,7 +36,7 @@ function joinPath(...parts: string[]): string {
             // 保留第一个 part 的可能空字符串（用于 modulePrefix 为空）
             let s = String(p);
             if (idx === 0) {
-                // 首段：去掉尾部 /
+                // 首段：去掉末尾 /
                 s = s.replace(/\/+$/g, "");
             } else {
                 // 中间段：去掉首尾 /
@@ -48,7 +46,7 @@ function joinPath(...parts: string[]): string {
         })
         .filter((p) => p !== "");
 
-    // 特殊：如果全都空，返回空字符串
+    // 特殊：如果全为空，返回空字符串
     if (cleaned.length === 0) return "";
 
     const result = cleaned.join("/");
@@ -59,7 +57,7 @@ function joinPath(...parts: string[]): string {
 /**
  * 构造最终请求路径：
  * - API_PREFIX（例如 /api）
- * - modulePrefix（例如 /handle 或 /llk；若传 "" 则表示无模块前缀）
+ * - modulePrefix（例如 /handle；若传 "" 则表示无模块前缀）
  * - path（例如 /start）
  */
 function buildUrl(modulePrefix: string, path: string): string {
@@ -124,7 +122,6 @@ export async function submitGuess(
         payload
     );
     // 后端在 finish=true 时会额外返回 score（结算得分）。
-    // 这里用交叉类型兼容，避免必须立刻改动 ../types/api 中的 GuessData 定义。
     return assertApiOk(resp.data) as GuessData & { score?: number };
 }
 
@@ -143,8 +140,21 @@ export async function resetGame(
 }
 
 /**
- * 健康检查（通常是全局路由，不属于 handle/llk）
- * GET {API_PREFIX}/health
+ * 获取答案：GET {API_PREFIX}{HANDLE_PREFIX}/{gameId}/answer?userId=...
+ */
+export async function getAnswer(
+    gameId: string,
+    userId: string
+): Promise<AnswerData> {
+    const resp = await api.get<ApiResponse<AnswerData>>(
+        buildUrl(HANDLE_PREFIX, `/${encodeURIComponent(gameId)}/answer`),
+        { params: { userId } }
+    );
+    return assertApiOk(resp.data);
+}
+
+/**
+ * 健康检查：GET {API_PREFIX}/health
  */
 export async function health(): Promise<HealthResponse> {
     const resp = await api.get<ApiResponse<HealthResponse>>(buildUrl("", "/health"));
@@ -156,14 +166,8 @@ export async function health(): Promise<HealthResponse> {
     return payload as HealthResponse;
 }
 
-/**
- * 预留：后续 llk 接口可以在这里按同样规则扩展
- * 示例：
- *   buildUrl(LLK_PREFIX, "/start")
- *   buildUrl(LLK_PREFIX, `/${gameId}/pick`)
- */
+/** 导出前缀，便于调试 */
 export const __prefixes = {
     API_PREFIX,
     HANDLE_PREFIX,
-    LLK_PREFIX,
 };

@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Button, Input, Modal, Space, Typography, message, Switch, Divider } from "antd";
 import type { InputRef } from "antd";
 import {
@@ -11,11 +12,12 @@ import {
   SettingOutlined,
 } from "@ant-design/icons";
 
-import { useThemeMode } from "../App";
+import { useThemeMode, useThemeStyle } from "../App";
 import TileCell, { CellStatus } from "../components/TileCell";
 import { TileId } from "../constants/tiles";
-import { createGame, submitGuess, getState } from "../services/gameApi";
+import { createGame, submitGuess, getState, getAnswer } from "../services/handleApi.ts";
 import type { GuessData, Hint, TileColor, GameStatusData } from "../types/api";
+import { getOrCreateUserId, normalizeUserId } from "../utils/userId";
 
 const COLS = 14;
 const MAX_ROWS = 6;
@@ -39,7 +41,6 @@ type PersistedState = {
   lastGuessAt?: number;
   hitCountValid?: number;
 
-  // ✅ 结算得分（后端仅在 finish=true 时返回；status 也会回传以便刷新恢复）
   score?: number;
 
   answerTiles14?: string[];
@@ -54,12 +55,6 @@ const TILE_KEYBOARD: TileId[] = [
   "1s","2s","3s","4s","5s","6s","7s","8s","9s",
   "1z","2z","3z","4z","5z","6z","7z",
 ];
-
-function genUserId(): string {
-  const anyCrypto = (globalThis as any).crypto;
-  if (anyCrypto?.randomUUID) return anyCrypto.randomUUID();
-  return `u_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-}
 
 function tilesToGuessString(tiles: string[]): string {
   return tiles.join("");
@@ -124,17 +119,27 @@ function clearPersisted() {
   }
 }
 
-export default function Game() {
+export default function Handle() {
   const { themeMode, setThemeMode } = useThemeMode();
-  const initOnceRef = useRef(false);
+  const { themeStyle } = useThemeStyle();
 
+  const navigate = useNavigate();
+  const params = useParams<{ gameId: string }>();
+  const [searchParams] = useSearchParams();
+
+  const routeGameId = normalizeUserId(params.gameId) ?? "";
+  const routeUserId = normalizeUserId(searchParams.get("userId"));
+  const unifiedUserId = routeUserId ?? getOrCreateUserId();
+
+  // Persisted UI state (not overwriting route gameId)
   const persisted0 = useMemo(() => loadPersisted(), []);
 
   const [ruleMode, setRuleMode] = useState<RuleMode>(persisted0?.ruleMode ?? "normal");
   const [inputMode, setInputMode] = useState<"keyboard" | "text">(persisted0?.inputMode ?? "keyboard");
 
-  const [userId] = useState<string>(() => persisted0?.userId ?? genUserId());
-  const [gameId, setGameId] = useState<string>(persisted0?.gameId ?? "");
+  const [userId] = useState<string>(() => unifiedUserId);
+
+  const [gameId, setGameId] = useState<string>(() => routeGameId || persisted0?.gameId || "");
 
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -172,9 +177,25 @@ export default function Game() {
   const [infoOpen, setInfoOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [modeOpen, setModeOpen] = useState(false);
-
   const [endSummaryOpen, setEndSummaryOpen] = useState(false);
+  const [endSummaryPayload, setEndSummaryPayload] = useState<{
+    win: boolean;
+    hitCountValid: number;
+    durationSec: number;
+    score?: number;
+    answerTiles14?: string[];
+  } | null>(null);
   const anyDialogOpen = infoOpen || settingsOpen || modeOpen || endSummaryOpen;
+
+  // If URL lacks userId, append it
+  useEffect(() => {
+    if (!routeGameId) return;
+    if (routeUserId) return;
+    navigate(`/handle/${encodeURIComponent(routeGameId)}?userId=${encodeURIComponent(unifiedUserId)}`, {
+      replace: true,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeGameId]);
 
   function persistSnapshot(next: Partial<PersistedState>) {
     const snapshot: PersistedState = {
@@ -208,79 +229,12 @@ export default function Game() {
   }
 
   function showEndSummary(opts: { win: boolean; hitCountValid: number; durationSec: number; score?: number; answerTiles14?: string[] }) {
-    const isDark = themeMode === "dark";
-
-    const titleNode = (
-      <span style={{ color: isDark ? "rgba(255,255,255,0.92)" : undefined }}>
-        {opts.win ? "本局结束：你猜对了" : "本局结束：次数用尽"}
-      </span>
-    );
-
-    const darkStyles = isDark
-      ? {
-          content: {
-            background: "#0b1220",
-            color: "rgba(255,255,255,0.88)",
-            border: "1px solid #0b1220",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.75)",
-          },
-          header: {
-            background: "#0b1220",
-            borderBottom: "1px solid #0b1220",
-          },
-          body: {
-            background: "#0b1220",
-            color: "rgba(255,255,255,0.88)",
-          },
-          footer: {
-            background: "#0b1220",
-            borderTop: "1px solid #0b1220",
-          },
-        }
-      : undefined;
-
+    setEndSummaryPayload(opts);
     setEndSummaryOpen(true);
-
-    Modal.info({
-      wrapClassName: isDark ? "mh-end-modal mh-end-modal-dark" : "mh-end-modal",
-      className: isDark ? "mh-end-modal mh-end-modal-dark" : "mh-end-modal",
-
-      title: titleNode,
-      okText: "知道了",
-      styles: darkStyles as any,
-
-      onOk: () => setEndSummaryOpen(false),
-      onCancel: () => setEndSummaryOpen(false),
-      afterClose: () => setEndSummaryOpen(false),
-
-      content: (
-        <div className={isDark ? "app-page-dark" : "app-page-light"} style={{ lineHeight: 1.9 }}>
-          <div>合法提交次数：<b>{opts.hitCountValid}</b></div>
-          <div>游玩时间：<b>{formatDurationMMSS(opts.durationSec)}</b></div>
-          <div>得分：<b>{typeof opts.score === "number" ? opts.score : 0}</b></div>
-
-          {!opts.win && Array.isArray(opts.answerTiles14) && opts.answerTiles14.length === COLS && (
-            <>
-              <div style={{ marginTop: 12 }}>正确答案：</div>
-
-              <div className="mh-answer-wrap">
-                <div className="mh-answer-grid">
-                  {opts.answerTiles14.map((t, i) => (
-                    <div key={i} className="board-cell">
-                      <TileCell tile={t} status="empty" themeMode={themeMode} size={40} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      ),
-    });
   }
 
-  async function restoreFromBackend(saved: PersistedState) {
-    const status = await getState(saved.gameId, saved.userId);
+  async function restoreFromBackend(gameIdToLoad: string) {
+    const status = await getState(gameIdToLoad, userId);
     const restoredRows = rowsFromStatus(status);
 
     const statusAny = status as any;
@@ -288,7 +242,7 @@ export default function Game() {
     const gameCreatedAtNext =
       typeof statusAny?.createdAt === "number"
         ? statusAny.createdAt
-        : (typeof saved.gameCreatedAt === "number" ? saved.gameCreatedAt : null);
+        : (typeof persisted0?.gameCreatedAt === "number" ? persisted0.gameCreatedAt : null);
 
     const hitCountValidNext =
       typeof statusAny?.hitCountValid === "number"
@@ -299,20 +253,15 @@ export default function Game() {
     const lastGuessAtNext =
       historyAny.length > 0 && typeof historyAny[historyAny.length - 1]?.createdAt === "number"
         ? historyAny[historyAny.length - 1].createdAt
-        : (typeof saved.lastGuessAt === "number" ? saved.lastGuessAt : null);
+        : (typeof persisted0?.lastGuessAt === "number" ? persisted0.lastGuessAt : null);
 
-    setGameId(statusAny.gameId || saved.gameId);
+    setGameId(statusAny.gameId || gameIdToLoad);
     setRows(restoredRows);
     setHint(statusAny.hint);
     setFinish(!!statusAny.finish);
     setWin(!!statusAny.win);
 
-    const restoredAnswerTiles14 = Array.isArray(statusAny.answerTiles14) ? (statusAny.answerTiles14 as string[]) : null;
-    if (!!statusAny.finish && !statusAny.win && restoredAnswerTiles14?.length === COLS) {
-      setAnswerTiles14(restoredAnswerTiles14);
-    } else {
-      setAnswerTiles14(null);
-    }
+    setAnswerTiles14(null);
 
     setGameCreatedAt(gameCreatedAtNext);
     setLastGuessAt(lastGuessAtNext);
@@ -324,18 +273,33 @@ export default function Game() {
     setCurrentTiles([]);
 
     persistSnapshot({
-      gameId: statusAny.gameId || saved.gameId,
+      gameId: statusAny.gameId || gameIdToLoad,
+      userId,
       rows: restoredRows,
       hint: statusAny.hint,
       finish: !!statusAny.finish,
       win: !!statusAny.win,
+      inputMode,
+      ruleMode,
       gameCreatedAt: gameCreatedAtNext ?? undefined,
       lastGuessAt: lastGuessAtNext ?? undefined,
       hitCountValid: hitCountValidNext,
       score: scoreNext ?? undefined,
-      answerTiles14: (!!statusAny.finish && !statusAny.win && restoredAnswerTiles14?.length === COLS) ? restoredAnswerTiles14 : undefined,
-      answerStr: typeof statusAny.answerStr === "string" ? statusAny.answerStr : undefined,
+      answerTiles14: undefined,
+      answerStr: undefined,
     });
+
+    if (!!statusAny.finish && !statusAny.win) {
+      try {
+        const ans = await getAnswer(statusAny.gameId || gameIdToLoad, userId);
+        const tiles = Array.isArray(ans.answerTiles14) ? ans.answerTiles14 : undefined;
+        if (tiles && tiles.length === COLS) {
+          setAnswerTiles14(tiles);
+        }
+      } catch {
+        // ignore answer fetch failure
+      }
+    }
   }
 
   async function startNewGame() {
@@ -358,7 +322,10 @@ export default function Game() {
       const res = await createGame({ userId });
       const resAny = res as any;
 
-      setGameId(resAny.gameId);
+      const newGameId = String(resAny.gameId || "");
+      if (!newGameId) throw new Error("Backend did not return gameId");
+
+      setGameId(newGameId);
       setHint(resAny.hint);
 
       const createdAt = typeof resAny?.createdAt === "number" ? resAny.createdAt : null;
@@ -366,7 +333,7 @@ export default function Game() {
 
       savePersisted({
         v: 2,
-        gameId: resAny.gameId,
+        gameId: newGameId,
         userId,
         rows: [],
         hint: resAny.hint,
@@ -381,50 +348,40 @@ export default function Game() {
         answerTiles14: undefined,
         answerStr: undefined,
       });
+
+      // Sync URL
+      navigate(`/handle/${encodeURIComponent(newGameId)}?userId=${encodeURIComponent(userId)}`, { replace: true });
     } catch (e: any) {
-      message.error(e.message || "创建对局失败");
+      message.error(e?.message || "Failed to create game");
     } finally {
       setLoading(false);
     }
   }
 
-  async function initOnMount() {
-    const saved = loadPersisted();
-
-    if (saved?.gameId && saved?.userId) {
-      setGameId(saved.gameId);
-      setRows(saved.rows ?? []);
-      setHint(saved.hint);
-      setFinish(saved.finish ?? false);
-      setWin(saved.win ?? false);
-      setInputMode(saved.inputMode ?? "keyboard");
-      setRuleMode(saved.ruleMode ?? "normal");
-
-      setAnswerTiles14(Array.isArray((saved as any).answerTiles14) ? ((saved as any).answerTiles14 as string[]) : null);
-
-      setGameCreatedAt(typeof saved.gameCreatedAt === "number" ? saved.gameCreatedAt : null);
-      setLastGuessAt(typeof saved.lastGuessAt === "number" ? saved.lastGuessAt : null);
-      setHitCountValid(typeof saved.hitCountValid === "number" ? saved.hitCountValid : (saved.rows?.length ?? 0));
-
-      setCurrentTiles([]);
-
-      try {
-        await restoreFromBackend(saved);
-        return;
-      } catch {
-        return;
-      }
-    }
-
-    await startNewGame();
-  }
+  // Restore by route gameId; if missing, go back
+  const lastLoadedGameIdRef = useRef<string>("");
 
   useEffect(() => {
-    if (initOnceRef.current) return;
-    initOnceRef.current = true;
-    initOnMount();
+    if (!routeGameId) {
+      navigate("/", { replace: true });
+      return;
+    }
+
+    if (lastLoadedGameIdRef.current === routeGameId) return;
+    lastLoadedGameIdRef.current = routeGameId;
+
+    void (async () => {
+      try {
+        setLoading(true);
+        await restoreFromBackend(routeGameId);
+      } catch (e: any) {
+        message.error(e?.message || "Failed to restore game");
+      } finally {
+        setLoading(false);
+      }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [routeGameId]);
 
   const pushTile = useCallback((tile: string) => {
     if (finish) return;
@@ -455,9 +412,6 @@ export default function Game() {
 
     const scoreNext = typeof resAny?.score === "number" ? (resAny.score as number) : null;
 
-    const answerTiles14Next = Array.isArray(resAny.answerTiles14) ? (resAny.answerTiles14 as string[]) : null;
-    const answerStrNext = typeof resAny.answerStr === "string" ? (resAny.answerStr as string) : undefined;
-
     const lastGuessAtNext =
       typeof resAny?.createdAt === "number" ? resAny.createdAt : (Date.now() / 1000);
     const hitCountValidNext =
@@ -482,8 +436,8 @@ export default function Game() {
         lastGuessAt: lastGuessAtNext,
         hitCountValid: hitCountValidNext,
         score: (nextFinish && typeof scoreNext === "number") ? scoreNext : undefined,
-        answerTiles14: (nextFinish && !nextWin && answerTiles14Next?.length === COLS) ? answerTiles14Next : undefined,
-        answerStr: (nextFinish && !nextWin && answerStrNext) ? answerStrNext : undefined,
+        answerTiles14: undefined,
+        answerStr: undefined,
       });
 
       return nextRows;
@@ -493,8 +447,8 @@ export default function Game() {
     setFinish(nextFinish);
     setWin(nextWin);
 
-    if (nextFinish && !nextWin && answerTiles14Next?.length === COLS) {
-      setAnswerTiles14(answerTiles14Next);
+    if (nextFinish && !nextWin) {
+      setAnswerTiles14(null);
     } else {
       setAnswerTiles14(null);
     }
@@ -516,8 +470,23 @@ export default function Game() {
         hitCountValid: hitCountValidNext,
         durationSec,
         score: typeof scoreNext === "number" ? scoreNext : undefined,
-        answerTiles14: (!nextWin ? (answerTiles14Next ?? undefined) : undefined),
+        answerTiles14: undefined,
       });
+
+      if (!nextWin && gameId) {
+        void (async () => {
+          try {
+            const ans = await getAnswer(gameId, userId);
+            const tiles = Array.isArray(ans.answerTiles14) ? ans.answerTiles14 : undefined;
+            if (tiles && tiles.length === COLS) {
+              setAnswerTiles14(tiles);
+              setEndSummaryPayload((prev) => (prev ? { ...prev, answerTiles14: tiles } : prev));
+            }
+          } catch {
+            // ignore answer fetch failure
+          }
+        })();
+      }
     }
   }
 
@@ -527,11 +496,11 @@ export default function Game() {
     if (submitting) return;
 
     if (currentTiles.length !== COLS) {
-      message.warning(`需要输入 ${COLS} 张牌后才能提交`);
+      message.warning(`Need ${COLS} tiles before submitting`);
       return;
     }
     if (rows.length >= MAX_ROWS) {
-      message.warning("已达到最大行数");
+      message.warning("Max rows reached");
       return;
     }
 
@@ -541,7 +510,7 @@ export default function Game() {
       const res = await submitGuess(gameId, { userId, guess });
       applyGuessResult(res);
     } catch (e: any) {
-      message.error(e.message || "提交失败");
+      message.error(e?.message || "Submit failed");
     } finally {
       setSubmitting(false);
     }
@@ -554,11 +523,11 @@ export default function Game() {
 
     const g = textGuess.trim();
     if (!g) {
-      message.warning("请输入猜测字符串");
+      message.warning("Please enter a guess string");
       return;
     }
     if (rows.length >= MAX_ROWS) {
-      message.warning("已达到最大行数");
+      message.warning("Max rows reached");
       return;
     }
 
@@ -568,7 +537,7 @@ export default function Game() {
       applyGuessResult(res);
       setTextGuess("");
     } catch (e: any) {
-      message.error(e.message || "提交失败");
+      message.error(e?.message || "Submit failed");
     } finally {
       setSubmitting(false);
     }
@@ -642,8 +611,8 @@ export default function Game() {
     await startNewGame();
 
     setModeOpen(false);
-    message.success(next === "normal" ? "已切换：普通麻将" : "已切换：立直麻将");
-  }, [ruleMode]);
+    message.success(next === "normal" ? "已切换至：普通麻将" : "已切换至：立直麻将");
+  }, [ruleMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const boardRows: Row[] = useMemo(() => {
     const filled: Row[] = [];
@@ -662,66 +631,12 @@ export default function Game() {
 
   return (
     <div className="game-root">
-      <div
-        className="game-top-actions"
-        style={{
-          position: "fixed",
-          top: 16,
-          right: 16,
-          left: "auto",
-          zIndex: anyDialogOpen ? 1 : 9999,
-          pointerEvents: anyDialogOpen ? "none" : "auto",
-          opacity: anyDialogOpen ? 0.35 : 1,
-          display: "flex",
-          justifyContent: "flex-end",
-        }}
-      >
-        <Space size={6}>
-          <Button
-            type="text"
-            className="top-icon-btn"
-            icon={<InfoCircleOutlined />}
-            disabled={anyDialogOpen}
-            onClick={() => {
-              if (anyDialogOpen) return;
-              setSettingsOpen(false);
-              setModeOpen(false);
-              setInfoOpen(true);
-            }}
-          />
-          <Button
-            type="text"
-            className="top-icon-btn"
-            icon={<RetweetOutlined />}
-            disabled={anyDialogOpen}
-            onClick={() => {
-              if (anyDialogOpen) return;
-              setInfoOpen(false);
-              setSettingsOpen(false);
-              setModeOpen(true);
-            }}
-          />
-          <Button
-            type="text"
-            className="top-icon-btn"
-            icon={<SettingOutlined />}
-            disabled={anyDialogOpen}
-            onClick={() => {
-              if (anyDialogOpen) return;
-              setInfoOpen(false);
-              setModeOpen(false);
-              setSettingsOpen(true);
-            }}
-          />
-        </Space>
-      </div>
-
       <div className="game-info">
         {ruleMode === "riichi" ? (
           <>
             <Typography.Text className="game-info-text">{topText}</Typography.Text>
             <div className="game-subinfo">
-              <div>{hint?.yakuTip ? `役：${hint.yakuTip}` : "\u00A0"}</div>
+              <div>{hint?.yakuTip ? `役种: ${hint.yakuTip}` : "\u00A0"}</div>
               <div>{hint?.hanTip ? hint.hanTip : "\u00A0"}</div>
             </div>
           </>
@@ -737,7 +652,54 @@ export default function Game() {
 
         <div style={{ marginTop: 10 }}>
           <Space>
-            <Button onClick={onNewGame} disabled={loading || submitting}>新开一局</Button>
+            <button className="modern-btn primary" type="button" onClick={onNewGame} disabled={loading || submitting}>
+              新开一局
+            </button>
+            <button
+              className="modern-btn"
+              type="button"
+              onClick={() => navigate("/", { replace: false })}
+              disabled={loading || submitting}
+            >
+              返回主页
+            </button>
+          </Space>
+        </div>
+
+        <div style={{ marginTop: 10 }}>
+          <Space wrap>
+            <button
+              className="modern-btn"
+              type="button"
+              onClick={() => {
+                if (anyDialogOpen) return;
+                setModeOpen(false);
+                setInfoOpen(true);
+              }}
+            >
+              <InfoCircleOutlined style={{ marginRight: 6 }} />
+              规则介绍
+            </button>
+            <button
+              className="modern-btn"
+              type="button"
+              onClick={() => {
+                if (anyDialogOpen) return;
+                setInfoOpen(false);
+                setModeOpen(true);
+              }}
+            >
+              <RetweetOutlined style={{ marginRight: 6 }} />
+              选择模式
+            </button>
+            <button
+              className="modern-btn"
+              type="button"
+              onClick={() => onToggleStringInput(inputMode !== "text")}
+            >
+              <SettingOutlined style={{ marginRight: 6 }} />
+              {inputMode === "text" ? "手牌输入" : "字符串输入"}
+            </button>
           </Space>
         </div>
       </div>
@@ -810,21 +772,33 @@ export default function Game() {
 
               <div className="keyboard-actions">
                 <Space>
-                  <Button
-                    icon={<SendOutlined />}
-                    type="primary"
+                  <button
+                    className="modern-btn primary"
+                    type="button"
                     onClick={onSubmitGuessFromKeyboard}
-                    loading={submitting}
-                    disabled={loading || finish}
+                    disabled={loading || finish || submitting}
                   >
+                    <SendOutlined style={{ marginRight: 6 }} />
                     提交
-                  </Button>
-                  <Button icon={<RollbackOutlined />} onClick={popTile} disabled={submitting || loading || finish}>
+                  </button>
+                  <button
+                    className="modern-btn"
+                    type="button"
+                    onClick={popTile}
+                    disabled={submitting || loading || finish}
+                  >
+                    <RollbackOutlined style={{ marginRight: 6 }} />
                     删除
-                  </Button>
-                  <Button icon={<DeleteOutlined />} onClick={clearTiles} disabled={submitting || loading || finish}>
+                  </button>
+                  <button
+                    className="modern-btn"
+                    type="button"
+                    onClick={clearTiles}
+                    disabled={submitting || loading || finish}
+                  >
+                    <DeleteOutlined style={{ marginRight: 6 }} />
                     清空
-                  </Button>
+                  </button>
                 </Space>
               </div>
             </div>
@@ -834,20 +808,20 @@ export default function Game() {
                 ref={textInputRef}
                 value={textGuess}
                 onChange={(e) => setTextGuess(e.target.value)}
-                placeholder="输入猜测字符串，如（123m456p789s11555z）"
-                className="mono"
+                placeholder="请输入字符串，例如：123m456p789s11555z"
+                className="mono modern-input"
                 onPressEnter={onSubmitGuessFromText}
                 disabled={loading || finish}
               />
-              <Button
-                type="primary"
-                icon={<CheckOutlined />}
+              <button
+                className="modern-btn primary"
+                type="button"
                 onClick={onSubmitGuessFromText}
-                loading={submitting}
-                disabled={loading || finish}
+                disabled={loading || finish || submitting}
               >
-                确定
-              </Button>
+                <CheckOutlined style={{ marginRight: 6 }} />
+                确认
+              </button>
             </div>
           )}
         </div>
@@ -855,7 +829,8 @@ export default function Game() {
 
       <Modal title="游戏简介" open={infoOpen} onCancel={() => setInfoOpen(false)} footer={null}>
         <Typography.Paragraph style={{ marginBottom: 8 }}>
-          本游戏为“猜手牌”（14 张牌）的 Wordle 类玩法。每次输入一手牌，系统会对每一张牌给出判色反馈。
+          本游戏为“猜手牌”的 Wordle 类玩法。
+          每次输入一手牌，系统会对每一张牌给出判色反馈。
         </Typography.Paragraph>
 
         <Divider style={{ margin: "12px 0" }} />
@@ -873,16 +848,15 @@ export default function Game() {
 
         <Typography.Title level={5} style={{ marginTop: 0 }}>文字输入说明</Typography.Title>
         <Typography.Paragraph style={{ marginBottom: 0 }}>
-          文字输入模式下，请在输入框中直接输入 14 张牌的字符串编码，例如：123m456p789s11555z。
+          文字输入模式下，请在输入框中直接输入 14 张牌的字符串编码，例如：123m456p789s11555z.
           其中 m/p/s/z 分别表示万/筒/索/字，1-7z 分别对应 东南西北白发中。
           输入不符合格式时，会提示错误且不消耗猜测次数。
         </Typography.Paragraph>
-
       </Modal>
 
-      <Modal title="模式转换" open={modeOpen} onCancel={() => setModeOpen(false)} footer={null}>
+      <Modal title="模式切换" open={modeOpen} onCancel={() => setModeOpen(false)} footer={null}>
         <Typography.Paragraph style={{ marginBottom: 12 }}>
-          选择玩法模式（默认：普通麻将）：
+          选择模式
         </Typography.Paragraph>
         <Space>
           <Button type={ruleMode === "normal" ? "primary" : "default"} onClick={() => void onChangeRuleMode("normal")}>
@@ -894,12 +868,52 @@ export default function Game() {
         </Space>
       </Modal>
 
-      <Modal title="设置" open={settingsOpen} onCancel={() => setSettingsOpen(false)} footer={null}>
+      <Modal
+        title={endSummaryPayload?.win ? "游戏结束：恭喜获胜！" : "游戏结束：猜测次数用尽。"}
+        open={endSummaryOpen}
+        onCancel={() => setEndSummaryOpen(false)}
+        closable={false}
+        footer={
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <button className="modern-btn primary" type="button" onClick={() => setEndSummaryOpen(false)}>
+              关闭
+            </button>
+          </div>
+        }
+        className={`mh-end-modal theme-${themeStyle}`}
+      >
+        {endSummaryPayload && (
+          <div className={`mh-end-modal-content theme-${themeStyle}`} style={{ lineHeight: 1.9 }}>
+            <div>合法猜测次数：<b>{endSummaryPayload.hitCountValid}</b></div>
+            <div>游戏用时：<b>{formatDurationMMSS(endSummaryPayload.durationSec)}</b></div>
+
+            {!endSummaryPayload.win &&
+              Array.isArray(endSummaryPayload.answerTiles14) &&
+              endSummaryPayload.answerTiles14.length === COLS && (
+                <>
+                  <div style={{ marginTop: 12 }}>正确答案：</div>
+
+                  <div className="mh-answer-wrap">
+                    <div className="mh-answer-grid">
+                      {endSummaryPayload.answerTiles14.map((t, i) => (
+                        <div key={i} className={`board-cell ${i === COLS - 1 ? "board-cell-last" : ""}`}>
+                          <TileCell tile={t} status="empty" themeMode={themeMode} size={40} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+          </div>
+        )}
+      </Modal>
+
+      <Modal title="Settings" open={settingsOpen} onCancel={() => setSettingsOpen(false)} footer={null}>
         <div className="settings-list">
           <div className="settings-item">
             <div className="settings-text">
-              <div className="settings-title">深色模式</div>
-              <div className="settings-desc">切换深色和浅色主题</div>
+              <div className="settings-title">Dark Mode</div>
+              <div className="settings-desc">Toggle light/dark theme</div>
             </div>
             <Switch checked={themeMode === "dark"} onChange={(checked) => onToggleDarkMode(checked)} />
           </div>
@@ -908,8 +922,8 @@ export default function Game() {
 
           <div className="settings-item">
             <div className="settings-text">
-              <div className="settings-title">字符串手牌输入</div>
-              <div className="settings-desc">使用一行文本输入手牌（替代点选）</div>
+              <div className="settings-title">Text Input Mode</div>
+              <div className="settings-desc">Use one-line string input</div>
             </div>
             <Switch checked={inputMode === "text"} onChange={(checked) => onToggleStringInput(checked)} />
           </div>

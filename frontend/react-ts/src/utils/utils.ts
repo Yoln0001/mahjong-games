@@ -1,9 +1,9 @@
 /**
- * 将牌码转换为 Unicode 麻将牌字符
+ * 灏嗙墝鐮佽浆鎹负 Unicode 楹诲皢鐗屽瓧绗?
  *
- * 牌码约定：
- * - 数牌：1m-9m（万）、1p-9p（筒）、1s-9s（索）
- * - 字牌：1z=东,2z=南,3z=西,4z=北,5z=白,6z=发,7z=中
+ * 鐗岀爜绾﹀畾锛?
+ * - 鏁扮墝锛?m-9m锛堜竾锛夈€?p-9p锛堢瓛锛夈€?s-9s锛堢储锛?
+ * - 瀛楃墝锛?z=涓?2z=鍗?3z=瑗?4z=鍖?5z=鐧?6z=鍙?7z=涓?
  */
 export function tileCodeToUnicode(code: string): string {
     const c = code.trim().toLowerCase();
@@ -16,9 +16,9 @@ export function tileCodeToUnicode(code: string): string {
 
         /**
          * Unicode Mahjong Tiles:
-         * - 1m..9m: U+1F007..U+1F00F (🀇..🀏)
-         * - 1s..9s: U+1F010..U+1F018 (🀐..🀘)
-         * - 1p..9p: U+1F019..U+1F021 (🀙..🀡)
+         * - 1m..9m: U+1F007..U+1F00F (馃€?.馃€?
+         * - 1s..9s: U+1F010..U+1F018 (馃€?.馃€?
+         * - 1p..9p: U+1F019..U+1F021 (馃€?.馃€?
          */
         const base =
             suit === "m"
@@ -36,34 +36,34 @@ export function tileCodeToUnicode(code: string): string {
 
         /**
          * honors mapping (per your project):
-         * 1z=东 🀀 U+1F000
-         * 2z=南 🀁 U+1F001
-         * 3z=西 🀂 U+1F002
-         * 4z=北 🀃 U+1F003
-         * 5z=白 🀆 U+1F006
-         * 6z=发 🀅 U+1F005
-         * 7z=中 🀄 U+1F004
+         * 1z=涓?馃€€ U+1F000
+         * 2z=鍗?馃€?U+1F001
+         * 3z=瑗?馃€?U+1F002
+         * 4z=鍖?馃€?U+1F003
+         * 5z=鐧?馃€?U+1F006
+         * 6z=鍙?馃€?U+1F005
+         * 7z=涓?馃€?U+1F004
          */
         const map: Record<number, number> = {
-            1: 0x1f000, // 🀀 East
-            2: 0x1f001, // 🀁 South
-            3: 0x1f002, // 🀂 West
-            4: 0x1f003, // 🀃 North
-            5: 0x1f006, // 🀆 White
-            6: 0x1f005, // 🀅 Green (發)
-            7: 0x1f004, // 🀄 Red (中)
+            1: 0x1f000, // 馃€€ East
+            2: 0x1f001, // 馃€?South
+            3: 0x1f002, // 馃€?West
+            4: 0x1f003, // 馃€?North
+            5: 0x1f006, // 馃€?White
+            6: 0x1f005, // 馃€?Green (鐧?
+            7: 0x1f004, // 馃€?Red (涓?
         };
 
-        return String.fromCodePoint(map[n] ?? 0x2753); // ❓
+        return String.fromCodePoint(map[n] ?? 0x2753); // 鉂?
     }
 
     // fallback
-    return "�";
+    return "锟?;
 }
 
 /**
- * 可选：把一串牌码解析成数组（极简版）
- * 例："1m 2m 3m 4p 5p 6p 7s 8s 9s 1z 2z 3z 4z 5z"
+ * 鍙€夛細鎶婁竴涓茬墝鐮佽В鏋愭垚鏁扮粍锛堟瀬绠€鐗堬級
+ * 渚嬶細"1m 2m 3m 4p 5p 6p 7s 8s 9s 1z 2z 3z 4z 5z"
  */
 export function parseTileCodes(input: string): string[] {
     return input

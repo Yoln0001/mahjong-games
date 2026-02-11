@@ -80,10 +80,13 @@ class TileAsciiMap(Enum):
     白 = "5z"
     发 = "6z"
     中 = "7z"
+    萬 = "m"
+    東 = "1z"
+    發 = "6z"
 
 
 # 中文麻将字符表
-TileMap = ["万", "筒", "索", "东", "南", "西", "北", "白", "发", "中"]
+TileMap = ["万", "筒", "索", "东", "南", "西", "北", "白", "发", "中", "萬", "東", "發"]
 
 
 def format_hand_msg(msg: str) -> str:
@@ -433,7 +436,7 @@ def evaluate_guess(
     ), None
 
 
-def new_game(*, hand_index: Optional[int] = None, max_guess: int = 8) -> GameState:
+def new_game(*, hand_index: Optional[int] = None, max_guess: int = 6) -> GameState:
     hand = get_hand(hand_index=hand_index)
     return GameState(
         game_id=uuid.uuid4().hex,

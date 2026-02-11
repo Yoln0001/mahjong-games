@@ -3,7 +3,7 @@
 # @Author : Yoln
 # @File : repo
 # @Project : mahjong-handle-web
-# backend/app/modules/llk/repo.py
+# backend/app/modules/link/repo.py
 from __future__ import annotations
 
 import json
@@ -14,10 +14,10 @@ import logging
 import redis
 
 T = TypeVar("T")
-log = logging.getLogger("mahjong.llk.repo")
+log = logging.getLogger("mahjong.link.repo")
 
 
-class LlkRepo(Protocol):
+class LinkRepo(Protocol):
     def create(self, initial: dict) -> dict: ...
     def get(self, game_id: str) -> Optional[dict]: ...
     def save(self, game_id: str, state: dict) -> None: ...
@@ -28,7 +28,7 @@ class LlkRepo(Protocol):
     def repo_type(self) -> str: ...
 
 
-class InMemoryLlkRepo:
+class InMemoryLinkRepo:
     def __init__(self, ttl_seconds: int = 24 * 3600):
         self._ttl = ttl_seconds
         self._store: Dict[str, tuple[float, dict]] = {}
@@ -44,7 +44,7 @@ class InMemoryLlkRepo:
             self._store.pop(gid, None)
 
     def create(self, initial: dict) -> dict:
-        # llk 的 game_id 你后面在 service/domain 里生成，这里先假设 initial 自带
+        # link 的 game_id 你后面在 service/domain 里生成，这里先假设 initial 自带
         self._gc()
         gid = initial["gameId"]
         self._store[gid] = (time.time(), initial)
@@ -73,8 +73,8 @@ class InMemoryLlkRepo:
         return True
 
 
-class RedisLlkRepo:
-    def __init__(self, redis_url: str, ttl_seconds: int, prefix: str = "mh:v1:llk:"):
+class RedisLinkRepo:
+    def __init__(self, redis_url: str, ttl_seconds: int, prefix: str = "mh:v1:link:"):
         self._ttl = ttl_seconds
         self._prefix = prefix
         self._r = redis.Redis.from_url(redis_url, decode_responses=True)
@@ -120,13 +120,13 @@ class RedisLlkRepo:
             return False
 
 
-def create_llk_repo_from_env() -> LlkRepo:
+def create_link_repo_from_env() -> LinkRepo:
     repo_type = os.getenv("GAME_REPO", "memory").lower()
     ttl = int(os.getenv("GAME_TTL_SECONDS", str(60 * 60)))
 
     if repo_type == "redis":
         redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-        prefix = os.getenv("LLK_KEY_PREFIX", "mh:v1:llk:")
-        return RedisLlkRepo(redis_url=redis_url, ttl_seconds=ttl, prefix=prefix)
+        prefix = os.getenv("LINK_KEY_PREFIX", "mh:v1:link:")
+        return RedisLinkRepo(redis_url=redis_url, ttl_seconds=ttl, prefix=prefix)
 
-    return InMemoryLlkRepo(ttl_seconds=ttl)
+    return InMemoryLinkRepo(ttl_seconds=ttl)

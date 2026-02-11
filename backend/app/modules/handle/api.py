@@ -163,7 +163,6 @@ def guess(game_id: str, req: GuessReq) -> ApiResponse:
         game_id, req.userId, ok.remain, ok.finish, ok.win, getattr(p, "score", None),
     )
 
-    answer_payload = _build_answer_payload(g) if (ok.finish and g is not None) else {}
     score_payload = {"score": ok.score} if ok.finish else {}
 
     return ApiResponse(
@@ -185,7 +184,6 @@ def guess(game_id: str, req: GuessReq) -> ApiResponse:
                 tsumo=bool(getattr(getattr(g, "hand", None), "tsumo", False)),
             ),
             **score_payload,
-            **answer_payload,
         },
         error=None,
     )
@@ -223,7 +221,6 @@ def status(game_id: str, userId: str) -> ApiResponse:
 
     history = [{"guessTiles14": e.guess_tiles_14, "colors14": e.colors_14, "createdAt": e.created_at} for e in p.history]
 
-    answer_payload = _build_answer_payload(g) if p.finished else {}
     score_payload = {"score": p.score} if p.finished else {}
 
     return ApiResponse(
@@ -245,9 +242,26 @@ def status(game_id: str, userId: str) -> ApiResponse:
                 tsumo=bool(getattr(g.hand, "tsumo", False)),
             ),
             **score_payload,
-            **answer_payload,
         },
     )
+
+
+@router.get("/{game_id}/answer", response_model=ApiResponse)
+def answer(game_id: str, userId: str) -> ApiResponse:
+    """Return answer payload only after the game is finished."""
+    g = handle_repo.get(game_id)
+    if not g:
+        return ApiResponse(ok=False, data=None, error=ApiError(code="GAME_NOT_FOUND", message="gameId 不存在"))
+
+    p = g.users.get(userId)
+    if not p:
+        return ApiResponse(ok=False, data=None, error=ApiError(code="USER_NOT_FOUND", message="userId 不存在"))
+
+    if not p.finished:
+        return ApiResponse(ok=False, data=None, error=ApiError(code="GAME_NOT_FINISHED", message="本局未结束"))
+
+    payload = _build_answer_payload(g)
+    return ApiResponse(ok=True, data=payload, error=None)
 
 
 # ✅ 改动：去掉 /game 前缀

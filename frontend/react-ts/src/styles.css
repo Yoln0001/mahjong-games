@@ -1,6 +1,7 @@
 html, body {
     margin: 0;
     padding: 0;
+    background: linear-gradient(180deg, rgba(13,110,253,0.05), transparent 30%), #f5f7f9;
 }
 
 * {
@@ -12,10 +13,680 @@ html, body {
     "Liberation Mono", "Courier New", monospace;
 }
 
-/* App：根据主题切换背景与默认文字色 */
+
 .app-page {
     min-height: 100vh;
     padding: 16px;
+    font-family: "IBM Plex Sans", "Avenir", "Helvetica Neue", "PingFang SC", sans-serif;
+    background: linear-gradient(180deg, rgba(13,110,253,0.05), transparent 30%), #f5f7f9;
+    color: #0c1116;
+}
+
+.app-page-light {
+    background: linear-gradient(180deg, rgba(13,110,253,0.05), transparent 30%), #f5f7f9;
+    color: #0c1116;
+}
+
+.app-page-dark {
+    background: #0b1220;
+    color: rgba(255, 255, 255, 0.88);
+}
+
+
+.theme-noir {
+    background: radial-gradient(900px 500px at 20% 20%, rgba(154, 208, 255, 0.12), transparent 60%),
+        radial-gradient(800px 500px at 80% 70%, rgba(255, 255, 255, 0.08), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,0.04), transparent 25%),
+        #0c0e14;
+    color: #e8edf2;
+}
+
+.theme-noir.app-page {
+    background: radial-gradient(900px 500px at 20% 20%, rgba(154, 208, 255, 0.12), transparent 60%),
+        radial-gradient(800px 500px at 80% 70%, rgba(255, 255, 255, 0.08), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,0.04), transparent 25%),
+        #0c0e14;
+    color: #e8edf2;
+}
+
+.theme-noir .site-header,
+.theme-noir .site-footer {
+    background: rgba(18, 22, 32, 0.92);
+    border-color: rgba(232, 237, 242, 0.12);
+    color: rgba(232, 237, 242, 0.72);
+}
+
+.theme-noir .site-name,
+.theme-noir .footer-link {
+    color: #e8edf2;
+}
+
+.theme-noir .icon-btn {
+    background: rgba(18, 22, 32, 0.92);
+    border-color: rgba(232, 237, 242, 0.12);
+    color: #e8edf2;
+}
+
+.theme-noir .mode-root,
+.theme-noir .game-root,
+.theme-noir .modern-panel,
+.theme-noir .mode-card {
+    background: rgba(18, 22, 32, 0.92);
+    border-color: rgba(232, 237, 242, 0.12);
+    color: #e8edf2;
+}
+
+.theme-noir .mode-subtitle,
+.theme-noir .modern-sub,
+.theme-noir .mode-card-foot,
+.theme-noir .modern-stat h4 {
+    color: rgba(232, 237, 242, 0.6);
+}
+
+.theme-noir .mode-card-title,
+.theme-noir .mode-card-foot {
+    color: #e8edf2;
+}
+
+.theme-noir .modern-btn {
+    background: transparent;
+    color: #e8edf2;
+    border-color: rgba(232, 237, 242, 0.2);
+}
+
+.theme-noir .modern-btn.primary {
+    background: #9ad0ff;
+    color: #0c0e14;
+}
+
+.theme-noir .modern-tile {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.theme-noir .modern-input {
+    background: rgba(18, 22, 32, 0.92);
+    border-color: rgba(232, 237, 242, 0.2);
+    color: #e8edf2;
+}
+
+.theme-noir .modern-input::placeholder {
+    color: rgba(232, 237, 242, 0.8);
+}
+
+
+.theme-wafuu {
+    background:
+        radial-gradient(1200px 700px at 70% 10%, rgba(200, 160, 90, 0.12), transparent 60%),
+        radial-gradient(900px 500px at 15% 80%, rgba(27, 42, 65, 0.10), transparent 60%),
+        repeating-linear-gradient(
+            0deg,
+            rgba(0,0,0,0.02),
+            rgba(0,0,0,0.02) 2px,
+            transparent 2px,
+            transparent 6px
+        ),
+        #f6f1e8;
+    color: #151515;
+    font-family: "Songti SC", "Noto Serif SC", "Source Han Serif SC", "STSong", serif;
+}
+
+.theme-wafuu.app-page {
+    background:
+        radial-gradient(1200px 700px at 70% 10%, rgba(200, 160, 90, 0.12), transparent 60%),
+        radial-gradient(900px 500px at 15% 80%, rgba(27, 42, 65, 0.10), transparent 60%),
+        repeating-linear-gradient(
+            0deg,
+            rgba(0,0,0,0.02),
+            rgba(0,0,0,0.02) 2px,
+            transparent 2px,
+            transparent 6px
+        ),
+        #f6f1e8;
+    color: #151515;
+}
+
+.theme-wafuu .site-header,
+.theme-wafuu .site-footer {
+    background: rgba(255, 255, 255, 0.7);
+    border-color: rgba(0, 0, 0, 0.08);
+    color: rgba(21, 21, 21, 0.75);
+}
+
+.theme-wafuu .site-name,
+.theme-wafuu .footer-link {
+    color: #151515;
+}
+
+.theme-wafuu .icon-btn {
+    background: rgba(255, 255, 255, 0.7);
+    border-color: rgba(0, 0, 0, 0.12);
+    color: #151515;
+}
+
+.theme-wafuu .mode-root,
+.theme-wafuu .game-root,
+.theme-wafuu .modern-panel,
+.theme-wafuu .mode-card {
+    background: rgba(255, 255, 255, 0.7);
+    border-color: rgba(0, 0, 0, 0.08);
+    color: #151515;
+}
+
+.theme-wafuu .mode-subtitle,
+.theme-wafuu .modern-sub,
+.theme-wafuu .mode-card-foot,
+.theme-wafuu .modern-stat h4 {
+    color: rgba(21, 21, 21, 0.7);
+}
+
+.theme-wafuu .modern-btn {
+    background: #fff8ef;
+    color: #151515;
+    border-color: rgba(0, 0, 0, 0.16);
+}
+
+.theme-wafuu .modern-btn.primary {
+    background: #b31e1e;
+    color: #fff;
+    border-color: transparent;
+}
+
+.theme-wafuu .modern-tile {
+    background: #fff;
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+.theme-wafuu .modern-input {
+    background: #fff8ef;
+    border-color: rgba(0, 0, 0, 0.16);
+    color: #151515;
+}
+
+
+.theme-arcade {
+    background:
+        radial-gradient(800px 500px at 20% 20%, rgba(54, 249, 255, 0.18), transparent 60%),
+        radial-gradient(900px 600px at 80% 70%, rgba(255, 79, 216, 0.15), transparent 60%),
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.03), rgba(255,255,255,0.03) 1px, transparent 1px, transparent 3px),
+        #0a0a12;
+    color: #f6f6ff;
+    font-family: "Press Start 2P", "JetBrains Mono", "Noto Sans SC", monospace;
+}
+
+.theme-arcade.app-page {
+    background:
+        radial-gradient(800px 500px at 20% 20%, rgba(54, 249, 255, 0.18), transparent 60%),
+        radial-gradient(900px 600px at 80% 70%, rgba(255, 79, 216, 0.15), transparent 60%),
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.03), rgba(255,255,255,0.03) 1px, transparent 1px, transparent 3px),
+        #0a0a12;
+    color: #f6f6ff;
+}
+
+.theme-arcade .site-header,
+.theme-arcade .site-footer {
+    background: rgba(18, 18, 34, 0.9);
+    border-color: rgba(54, 249, 255, 0.4);
+    color: rgba(246,246,255,0.75);
+    box-shadow: 0 0 18px rgba(54, 249, 255, 0.2);
+}
+
+.theme-arcade .site-name,
+.theme-arcade .footer-link {
+    color: #f6f6ff;
+}
+
+.theme-arcade .icon-btn {
+    background: transparent;
+    border-color: rgba(54, 249, 255, 0.6);
+    color: #36f9ff;
+    box-shadow: 0 0 12px rgba(54, 249, 255, 0.3);
+}
+
+.theme-arcade .mode-root,
+.theme-arcade .game-root,
+.theme-arcade .modern-panel,
+.theme-arcade .mode-card {
+    background: rgba(18, 18, 34, 0.9);
+    border-color: rgba(54, 249, 255, 0.4);
+    color: #f6f6ff;
+    box-shadow: 0 0 18px rgba(54, 249, 255, 0.2);
+}
+
+.theme-arcade .mode-subtitle,
+.theme-arcade .modern-sub,
+.theme-arcade .mode-card-foot,
+.theme-arcade .modern-stat h4 {
+    color: rgba(246,246,255,0.7);
+}
+
+.theme-arcade .mode-card-title,
+.theme-arcade .mode-card-foot {
+    color: #f6f6ff;
+}
+
+.theme-arcade .modern-btn {
+    background: transparent;
+    color: #36f9ff;
+    border-color: rgba(54, 249, 255, 0.6);
+    box-shadow: 0 0 12px rgba(54, 249, 255, 0.3);
+}
+
+.theme-arcade .modern-btn.primary {
+    background: #ff4fd8;
+    color: #0a0a12;
+    border-color: transparent;
+    box-shadow: 0 0 12px rgba(255, 79, 216, 0.4);
+}
+
+.theme-arcade .modern-tile {
+    background: #101420;
+    border-color: rgba(255,255,255,0.2);
+    box-shadow: inset 0 0 8px rgba(54, 249, 255, 0.2);
+}
+
+.theme-arcade .modern-input {
+    background: #101420;
+    border-color: rgba(54, 249, 255, 0.4);
+    color: #f6f6ff;
+    box-shadow: inset 0 0 8px rgba(54, 249, 255, 0.2);
+}
+
+.theme-arcade .modern-input::placeholder {
+    color: rgba(246, 246, 255, 0.85);
+}
+
+
+.theme-arcade .tile-cell {
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.theme-arcade .tile-cell-empty {
+    background: #111827;
+}
+
+.theme-arcade .tile-cell-gray {
+    background: #374151;
+}
+
+
+.theme-noir .tile-cell {
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.theme-noir .tile-cell-empty {
+    background: #111827;
+}
+
+.theme-noir .tile-cell-gray {
+    background: #374151;
+}
+
+.site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    margin: -16px -16px 16px;
+    background: rgba(255, 255, 255, 0.86);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 6px 16px rgba(12, 17, 22, 0.06);
+}
+
+.site-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.site-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #0d6efd, #6ea8fe);
+    box-shadow: 0 6px 14px rgba(13, 110, 253, 0.25);
+}
+
+.site-name {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.site-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.site-footer {
+    margin: 24px -16px -16px;
+    padding: 14px 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.62);
+    background: rgba(255, 255, 255, 0.86);
+    backdrop-filter: blur(8px);
+}
+
+.footer-center {
+    justify-content: center;
+}
+
+.footer-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.footer-dot {
+    margin: 0 6px;
+}
+
+
+.mode-root {
+    max-width: none;
+    margin: 0;
+    padding: 12px 8px 30px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(13,110,253,0.08), transparent 40%), #f5f7f9;
+}
+
+.mode-hero {
+    margin-bottom: 18px;
+}
+
+.mode-kicker {
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.5);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.mode-title {
+    margin: 6px 0 8px;
+    font-size: 32px;
+}
+
+.mode-subtitle {
+    margin: 0;
+    color: rgba(0, 0, 0, 0.62);
+}
+
+.mode-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.mode-card {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
+    padding: 22px 18px;
+    text-align: center;
+    display: grid;
+    gap: 12px;
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.06);
+    min-height: 260px;
+}
+
+.mode-card-main {
+    border: none;
+    background: transparent;
+    padding: 0;
+    text-align: center;
+    cursor: pointer;
+    display: grid;
+    gap: 12px;
+    justify-items: center;
+}
+
+.mode-card-main:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.mode-card-top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.mode-card-title {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.mode-card-foot {
+    font-size: 13px;
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.mode-card-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.mode-tile-stack {
+    display: flex;
+    gap: 6px;
+}
+
+.mode-tile {
+    width: 30px;
+    height: 40px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+.mode-tile.blue { background: #1677ff; }
+.mode-tile.orange { background: #fa8c16; }
+.mode-tile.gray { background: #d9d9d9; }
+
+.mode-link-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mode-link-tile {
+    width: 30px;
+    height: 40px;
+    border-radius: 8px;
+    background: #f4f6f8;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.mode-link-line {
+    width: 26px;
+    height: 2px;
+    background: #1677ff;
+}
+
+@media (max-width: 860px) {
+    .mode-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+
+.modern-shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    display: grid;
+    gap: 18px;
+}
+
+.modern-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.modern-title {
+    font-size: 30px;
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+.modern-sub {
+    font-size: 13px;
+    color: rgba(12, 17, 22, 0.62);
+}
+
+.modern-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.modern-actions.center {
+    justify-content: center;
+    width: 100%;
+}
+
+.modern-btn {
+    border: 1px solid rgba(12, 17, 22, 0.08);
+    background: #fff;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.modern-btn.primary {
+    background: #0d6efd;
+    color: #fff;
+    border-color: transparent;
+}
+
+.modern-input {
+    border-radius: 10px;
+    border: 1px solid rgba(12, 17, 22, 0.12);
+    background: #fff;
+    color: inherit;
+    padding: 8px 10px;
+}
+
+.modern-grid {
+    display: grid;
+    grid-template-columns: 960px 220px;
+    gap: 18px;
+    width: 100%;
+    justify-content: space-between;
+}
+
+.modern-panel {
+    background: #ffffff;
+    border: 1px solid rgba(12, 17, 22, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 10px 24px rgba(12, 17, 22, 0.08);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.board-panel {
+    padding: 20px 22px;
+    width: 100%;
+}
+
+.slot-panel {
+    padding: 12px 14px;
+    width: 100%;
+}
+
+.modern-board {
+    display: grid;
+    grid-template-columns: repeat(17, 44px);
+    gap: 8px;
+    justify-content: center;
+}
+
+.modern-tile {
+    width: 44px;
+    height: 60px;
+    border-radius: 10px;
+    background: #fff;
+    border: none;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.75);
+}
+
+.slot-empty {
+    box-shadow: 0 2px 8px rgba(12, 17, 22, 0.12);
+}
+
+.link-tile-wrap {
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(12, 17, 22, 0.08);
+}
+
+.theme-noir .link-tile-wrap,
+.theme-arcade .link-tile-wrap {
+    background: #101420;
+}
+
+.modern-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.modern-stat {
+    border: 1px solid rgba(12, 17, 22, 0.08);
+    border-radius: 12px;
+    padding: 10px;
+}
+
+.modern-stat h4 {
+    margin: 0 0 6px;
+    font-size: 12px;
+    color: rgba(12, 17, 22, 0.62);
+}
+
+.modern-stat p {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.modern-slot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 148px; 
+    max-width: 100%;
+}
+
+@media (max-width: 980px) {
+    .modern-grid {
+        grid-template-columns: 1fr;
+    }
+    .modern-board {
+        grid-template-columns: repeat(17, minmax(26px, 1fr));
+    }
+    .modern-tile {
+        width: 100%;
+    }
 }
 
 .app-page-light {
@@ -28,15 +699,17 @@ html, body {
     color: rgba(255, 255, 255, 0.88);
 }
 
-/* ===== 玩家界面 ===== */
+
 .game-root {
     position: relative;
-    max-width: 980px;
-    margin: 0 auto;
+    max-width: none;
+    margin: 0;
     padding: 8px 0 24px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(13,110,253,0.08), transparent 40%), #f5f7f9;
 }
 
-/* 右上角功能按钮 */
+
 .game-top-actions {
     position: fixed;
     top: 16px;
@@ -63,7 +736,7 @@ html, body {
     color: rgba(255, 255, 255, 0.95);
 }
 
-/* 中间信息 */
+
 .game-info {
     text-align: center;
     margin: 6px 0 14px;
@@ -80,7 +753,17 @@ html, body {
     line-height: 1.6;
 }
 
-/* 棋盘 */
+.theme-noir .game-info-text,
+.theme-noir .game-subinfo {
+    color: #e8edf2;
+}
+
+.theme-arcade .game-info-text,
+.theme-arcade .game-subinfo {
+    color: #f6f6ff;
+}
+
+
 .board {
     display: flex;
     flex-direction: column;
@@ -96,7 +779,7 @@ html, body {
     justify-content: center;
 }
 
-/* TileCell：统一轮廓与阴影 */
+
 .tile-cell {
     width: 44px;
     height: 60px;
@@ -110,7 +793,7 @@ html, body {
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
-/* 深色模式：增加“轮廓感”（outline + 更明显边框/阴影） */
+
 .app-page-dark .tile-cell {
     border: 1px solid rgba(255, 255, 255, 0.18);
     outline: 1px solid rgba(255, 255, 255, 0.14);
@@ -118,7 +801,7 @@ html, body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
 }
 
-/* 判色 */
+
 .tile-cell-blue {
     background: #1677ff;
 }
@@ -135,16 +818,16 @@ html, body {
     background: #ffffff;
 }
 
-/* 深色模式：麻将牌“背景染黑”（这里指牌格底色变暗） */
+
 .app-page-dark .tile-cell-empty {
-    background: #111827; /* 深灰黑 */
+    background: #111827; 
 }
 
 .app-page-dark .tile-cell-gray {
-    background: #374151; /* 灰牌也调暗，避免刺眼 */
+    background: #374151; 
 }
 
-/* 输入区 */
+
 .input-area {
     display: block;
 }
@@ -155,7 +838,7 @@ html, body {
     gap: 12px;
 }
 
-/* 牌键盘 */
+
 .tile-keyboard {
     display: flex;
     flex-direction: column;
@@ -181,7 +864,7 @@ html, body {
     opacity: 0.55;
 }
 
-/* 键盘按钮：确保整行居中 */
+
 .keyboard-actions {
     width: 100%;
     display: flex;
@@ -189,9 +872,9 @@ html, body {
     margin-top: 6px;
 }
 
-/* 文本模式输入条：限制最大宽度不超过 14 张牌连起来 */
+
 .text-input-bar {
-    width: min(700px, 100%); /* ≈ 14*(44) + 13*(6) */
+    width: min(700px, 100%); 
     margin: 0 auto;
     display: grid;
     grid-template-columns: 1fr 110px;
@@ -199,7 +882,7 @@ html, body {
     align-items: center;
 }
 
-/* ===== 设置弹窗：两项列表 ===== */
+
 .settings-list {
     padding-top: 4px;
 }
@@ -237,7 +920,7 @@ html, body {
     background: rgba(255, 255, 255, 0.10);
 }
 
-/* 点选牌：hover 高亮 */
+
 .tile-btn:hover .tile-cell {
     transform: translateY(-1px);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
@@ -250,7 +933,7 @@ html, body {
     outline: 2px solid rgba(255, 255, 255, 0.22);
 }
 
-/* 棋盘格子：用于控制最后一列的间距与高亮 */
+
 .board-cell {
     display: flex;
 }
@@ -273,26 +956,26 @@ html, body {
     0 0 18px rgba(22, 119, 255, 0.22);
 }
 
-/* =========================================================
-   End Summary Modal (Modal.info) 修复：
-   1) 去白框：覆盖 ant-modal-container（你截图确认白底在这里）
-   2) 真居中：去掉 confirm icon 占位，让内容列不再偏右
-   ========================================================= */
+.mh-end-modal .board-cell-last {
+    margin-left: 0;
+}
 
-/* 1) 白框根源：ant-modal-container 默认白底 -> 强制改深色 */
+
+
+
 .mh-end-modal-dark .ant-modal-container {
     background: #0b1220 !important;
     border: 1px solid #0b1220 !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75) !important;
 }
 
-/* 同时保证 content 也一致（防止某些版本 container->content 之间仍露白） */
+
 .mh-end-modal-dark .ant-modal-content {
     background: #0b1220 !important;
     border: 1px solid #0b1220 !important;
 }
 
-/* header/body/footer 全部统一 */
+
 .mh-end-modal-dark .ant-modal-header,
 .mh-end-modal-dark .ant-modal-body,
 .mh-end-modal-dark .ant-modal-footer {
@@ -301,22 +984,21 @@ html, body {
     border-color: #0b1220 !important;
 }
 
-/* 标题/文本颜色 */
+
 .mh-end-modal-dark .ant-modal-title,
 .mh-end-modal-dark .ant-modal-confirm-title,
 .mh-end-modal-dark .ant-modal-confirm-content {
     color: rgba(255, 255, 255, 0.88) !important;
 }
 
-/* 关闭按钮、info 图标颜色 */
+
 .mh-end-modal-dark .ant-modal-close,
 .mh-end-modal-dark .ant-modal-close-x,
 .mh-end-modal-dark .ant-modal-confirm-info .anticon {
     color: rgba(255, 255, 255, 0.78) !important;
 }
 
-/* 2) “看起来不居中”的根因：confirm 默认 icon + content 的 flex 布局
-   把 icon 去掉，并把 body 改成 block，让内容占满整行 */
+
 .mh-end-modal .ant-modal-confirm-body {
     display: block !important;
 }
@@ -325,13 +1007,45 @@ html, body {
     display: none !important;
 }
 
-/* confirm content 默认会留出给 icon 的 margin-left，强制清零 */
+
 .mh-end-modal .ant-modal-confirm-content,
 .mh-end-modal .ant-modal-confirm-title {
     margin-left: 0 !important;
 }
 
-/* 答案区：强制居中 + 固定 7 列 */
+.mh-end-modal.theme-noir .ant-modal-title,
+.mh-end-modal.theme-arcade .ant-modal-title {
+    background: #000000 !important;
+    color: #ffffff !important;
+    padding: 0 8px;
+    border-radius: 6px;
+}
+
+.mh-end-modal.theme-modern .ant-modal-title,
+.mh-end-modal.theme-wafuu .ant-modal-title {
+    background: #ffffff !important;
+    color: #0c1116 !important;
+    padding: 0 8px;
+    border-radius: 6px;
+}
+
+.mh-end-modal-content.theme-noir,
+.mh-end-modal-content.theme-arcade {
+    background: #000000;
+    color: #ffffff;
+}
+
+.mh-end-modal-content.theme-modern,
+.mh-end-modal-content.theme-wafuu {
+    background: #ffffff;
+    color: #0c1116;
+}
+
+.mh-end-modal .ant-modal-body {
+    padding-bottom: 16px;
+}
+
+
 .mh-answer-wrap {
     width: 100%;
     display: flex;
@@ -343,4 +1057,182 @@ html, body {
     grid-template-columns: repeat(7, 44px);
     gap: 6px;
     justify-content: center;
+}
+
+.mh-end-modal.theme-modern .ant-modal-content,
+.mh-end-modal.theme-modern .ant-modal-header,
+.mh-end-modal.theme-modern .ant-modal-body,
+.mh-end-modal.theme-modern .ant-modal-footer {
+    background: #ffffff !important;
+    color: #0c1116 !important;
+    border-color: #ffffff !important;
+}
+
+.mh-end-modal.theme-modern .ant-modal-container {
+    background: #ffffff !important;
+    border-color: #ffffff !important;
+}
+
+.mh-end-modal.theme-noir .ant-modal-content,
+.mh-end-modal.theme-noir .ant-modal-header,
+.mh-end-modal.theme-noir .ant-modal-body,
+.mh-end-modal.theme-noir .ant-modal-footer {
+    background: #000000 !important;
+    color: #ffffff !important;
+    border-color: #000000 !important;
+}
+
+.mh-end-modal.theme-noir .ant-modal-container {
+    background: #000000 !important;
+    border-color: #000000 !important;
+}
+
+.mh-end-modal.theme-noir .ant-modal-content {
+    border: 1px solid #000000 !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75) !important;
+}
+
+.mh-end-modal.theme-wafuu .ant-modal-content,
+.mh-end-modal.theme-wafuu .ant-modal-header,
+.mh-end-modal.theme-wafuu .ant-modal-body,
+.mh-end-modal.theme-wafuu .ant-modal-footer {
+    background: #ffffff !important;
+    color: #0c1116 !important;
+    border-color: #ffffff !important;
+}
+
+.mh-end-modal.theme-wafuu .ant-modal-container {
+    background: #ffffff !important;
+    border-color: #ffffff !important;
+}
+
+.mh-end-modal.theme-arcade .ant-modal-content,
+.mh-end-modal.theme-arcade .ant-modal-header,
+.mh-end-modal.theme-arcade .ant-modal-body,
+.mh-end-modal.theme-arcade .ant-modal-footer {
+    background: #000000 !important;
+    color: #ffffff !important;
+    border-color: #000000 !important;
+}
+
+.mh-end-modal.theme-arcade .ant-modal-container {
+    background: #000000 !important;
+    border-color: #000000 !important;
+}
+
+.mh-end-modal.theme-arcade .ant-modal-content {
+    border: 1px solid #000000 !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75) !important;
+}
+
+.theme-modal.theme-modern .ant-modal-content,
+.theme-modal.theme-modern .ant-modal-header,
+.theme-modal.theme-modern .ant-modal-body,
+.theme-modal.theme-modern .ant-modal-footer,
+.theme-modal.theme-modern .ant-modal-container {
+    background: linear-gradient(180deg, rgba(13,110,253,0.08), transparent 40%), #f5f7f9 !important;
+    color: #0c1116 !important;
+    border-color: #f5f7f9 !important;
+}
+
+.theme-modal.theme-noir .ant-modal-content,
+.theme-modal.theme-noir .ant-modal-header,
+.theme-modal.theme-noir .ant-modal-body,
+.theme-modal.theme-noir .ant-modal-footer,
+.theme-modal.theme-noir .ant-modal-container {
+    background:
+        radial-gradient(900px 500px at 20% 20%, rgba(154, 208, 255, 0.12), transparent 60%),
+        radial-gradient(800px 500px at 80% 70%, rgba(255, 255, 255, 0.08), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,0.04), transparent 25%),
+        #0c0e14 !important;
+    color: #ffffff !important;
+    border-color: #0c0e14 !important;
+}
+
+.theme-modal.theme-wafuu .ant-modal-content,
+.theme-modal.theme-wafuu .ant-modal-header,
+.theme-modal.theme-wafuu .ant-modal-body,
+.theme-modal.theme-wafuu .ant-modal-footer,
+.theme-modal.theme-wafuu .ant-modal-container {
+    background:
+        radial-gradient(1200px 700px at 70% 10%, rgba(200, 160, 90, 0.12), transparent 60%),
+        radial-gradient(900px 500px at 15% 80%, rgba(27, 42, 65, 0.10), transparent 60%),
+        repeating-linear-gradient(
+            0deg,
+            rgba(0,0,0,0.02),
+            rgba(0,0,0,0.02) 2px,
+            transparent 2px,
+            transparent 6px
+        ),
+        #f6f1e8 !important;
+    color: #0c1116 !important;
+    border-color: #f6f1e8 !important;
+}
+
+.theme-modal.theme-arcade .ant-modal-content,
+.theme-modal.theme-arcade .ant-modal-header,
+.theme-modal.theme-arcade .ant-modal-body,
+.theme-modal.theme-arcade .ant-modal-footer,
+.theme-modal.theme-arcade .ant-modal-container {
+    background:
+        radial-gradient(800px 500px at 20% 20%, rgba(54, 249, 255, 0.18), transparent 60%),
+        radial-gradient(900px 600px at 80% 70%, rgba(255, 79, 216, 0.15), transparent 60%),
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.03), rgba(255,255,255,0.03) 1px, transparent 1px, transparent 3px),
+        #0a0a12 !important;
+    color: #ffffff !important;
+    border-color: #0a0a12 !important;
+}
+
+.theme-modal.theme-noir .ant-modal-title,
+.theme-modal.theme-arcade .ant-modal-title {
+    color: #ffffff !important;
+}
+
+.theme-modal .theme-option {
+    width: 100%;
+}
+
+.theme-modal.theme-modern .theme-option {
+    background: #ffffff;
+    color: #0c1116;
+    border-color: transparent;
+}
+
+.theme-modal.theme-wafuu .theme-option {
+    background: #ffffff;
+    color: #0c1116;
+    border-color: transparent;
+}
+
+.theme-modal.theme-noir .theme-option {
+    background: #000000;
+    color: #ffffff;
+    border-color: transparent;
+}
+
+.theme-modal.theme-arcade .theme-option {
+    background: #000000;
+    color: #ffffff;
+    border-color: transparent;
+}
+
+.theme-modal.theme-modern .theme-option.active {
+    background: #0d6efd;
+    color: #ffffff;
+}
+
+.theme-modal.theme-wafuu .theme-option.active {
+    background: #b31e1e;
+    color: #ffffff;
+}
+
+.theme-modal.theme-noir .theme-option.active {
+    background: #9ad0ff;
+    color: #0c0e14;
+}
+
+.theme-modal.theme-arcade .theme-option.active {
+    background: #ff4fd8;
+    color: #0a0a12;
+    box-shadow: 0 0 12px rgba(255, 79, 216, 0.4);
 }

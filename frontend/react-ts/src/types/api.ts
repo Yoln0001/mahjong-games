@@ -44,11 +44,6 @@ export interface GuessData {
     finish: boolean;
     win: boolean;
     hint?: Hint;
-
-    /** ✅ 仅在 finish=true 时后端返回：用于失败结算弹框展示答案 */
-    answerTiles14?: string[];
-    /** ✅ 可选：后端若返回 answerStr（raw_14）可供前端复用解析逻辑 */
-    answerStr?: string;
 }
 
 /** /game/{gameId}/status 返回 data（如果你后端有） */
@@ -67,10 +62,10 @@ export interface GameStatusData {
     win: boolean;
     history: GameHistoryEntry[];
     hint?: Hint;
+}
 
-    /** ✅ 仅在 finish=true 时后端返回：用于刷新/断线重连后仍能展示答案 */
+export interface AnswerData {
     answerTiles14?: string[];
-    /** ✅ 可选：同上 */
     answerStr?: string;
 }
 
@@ -99,4 +94,79 @@ export interface HealthResponse {
         ok: boolean;
         detail?: string;
     };
+}
+
+// ----------------------------
+// Link (连连看) API types
+// ----------------------------
+
+/** /link/start 请求 */
+export interface LinkStartReq {
+    userId: string;
+    handIndex?: number;
+    tempLimit?: number;
+}
+
+/** /link/start 返回 data */
+export interface LinkStartData {
+    gameId: string;
+    createdAt: number;
+    columns: string[][];
+    topTiles: Array<string | null>;
+    columnCounts: number[];
+    tempSlots: string[];
+    tempLimit: number;
+    remainTiles: number;
+    finish: boolean;
+    win: boolean;
+    failReason?: string | null;
+}
+
+/** /link/{gameId}/pick 请求 */
+export interface LinkPickReq {
+    userId: string;
+    column: number;
+}
+
+/** /link/{gameId}/pick 返回 data */
+export interface LinkPickData {
+    picked: { column: number; tile: string };
+    removed: { tile: string; count: number } | null;
+    columns: string[][];
+    topTiles: Array<string | null>;
+    columnCounts: number[];
+    tempSlots: string[];
+    tempLimit: number;
+    remainTiles: number;
+    finish: boolean;
+    win: boolean;
+    failReason?: string | null;
+}
+
+/** /link/{gameId}/status 返回 data */
+export interface LinkStatusData {
+    gameId: string;
+    createdAt: number;
+    columns: string[][];
+    topTiles: Array<string | null>;
+    columnCounts: number[];
+    tempSlots: string[];
+    tempLimit: number;
+    remainTiles: number;
+    finish: boolean;
+    win: boolean;
+    failReason?: string | null;
+}
+
+/** /link/{gameId}/reset 请求 */
+export interface LinkResetReq {
+    userId: string;
+    handIndex?: number;
+    tempLimit?: number;
+}
+
+/** /link/{gameId}/reset 返回 data */
+export interface LinkResetData {
+    gameId: string;
+    createdAt: number;
 }

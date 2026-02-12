@@ -469,6 +469,12 @@ html, body {
     gap: 12px;
 }
 
+.mode-card-image {
+    width: 264px;
+    height: 264px;
+    object-fit: contain;
+}
+
 .mode-card-title {
     font-size: 18px;
     font-weight: 700;

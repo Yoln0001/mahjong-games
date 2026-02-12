@@ -4,12 +4,17 @@ import { message } from "antd";
 import { createGame as createHandleGame } from "../services/handleApi";
 import { startLinkGame } from "../services/linkApi";
 import { getOrCreateUserId, normalizeUserId } from "../utils/userId";
+import { useThemeStyle } from "../App";
 
 export default function ModeSelect() {
   const navigate = useNavigate();
+  const { themeStyle } = useThemeStyle();
   const defaultUserId = useMemo(() => getOrCreateUserId(), []);
   const [creatingHandle, setCreatingHandle] = useState(false);
   const [creatingLink, setCreatingLink] = useState(false);
+  const isDarkTheme = themeStyle === "noir" || themeStyle === "arcade";
+  const handleImg = isDarkTheme ? "/picture/猜手牌dark.png" : "/picture/猜手牌light.png";
+  const linkImg = isDarkTheme ? "/picture/连连看dark.png" : "/picture/连连看light.png";
 
   async function onCreateHandle() {
     try {
@@ -80,11 +85,11 @@ export default function ModeSelect() {
             aria-label="进入猜手牌"
           >
             <div className="mode-card-top">
-              <div className="mode-tile-stack">
-                <span className="mode-tile blue" />
-                <span className="mode-tile orange" />
-                <span className="mode-tile gray" />
-              </div>
+              <img
+                className="mode-card-image"
+                src={handleImg}
+                alt="猜手牌"
+              />
               <div className="mode-card-title">猜手牌</div>
             </div>
           </button>
@@ -100,11 +105,11 @@ export default function ModeSelect() {
             aria-label="进入连连看"
           >
             <div className="mode-card-top">
-              <div className="mode-link-icon">
-                <span className="mode-link-tile" />
-                <span className="mode-link-line" />
-                <span className="mode-link-tile" />
-              </div>
+              <img
+                className="mode-card-image"
+                src={linkImg}
+                alt="连连看"
+              />
               <div className="mode-card-title">连连看</div>
             </div>
           </button>

@@ -22,7 +22,13 @@ def _setup_logging() -> None:
 
 def create_app() -> FastAPI:
     _setup_logging()
-    app = FastAPI(title="Mahjong Handle Web API", version="0.1.0")
+    app = FastAPI(
+        title="Mahjong Handle Web API",
+        version="0.1.0",
+        docs_url="/api/docs",
+        openapi_url="/api/openapi.json",
+        redoc_url="/api/redoc",
+    )
 
     app.add_middleware(
         CORSMiddleware,

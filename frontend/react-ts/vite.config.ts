@@ -10,4 +10,13 @@ export default defineConfig({
       },
     }),
   ],
+  server: {
+    proxy: {
+      // 前端请求 /api/* -> 转发到本地后端 http://127.0.0.1:8000
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+    },
+  },
 })

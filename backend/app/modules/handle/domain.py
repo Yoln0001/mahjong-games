@@ -88,6 +88,65 @@ class TileAsciiMap(Enum):
 # 中文麻将字符表
 TileMap = ["万", "筒", "索", "东", "南", "西", "北", "白", "发", "中", "萬", "東", "發"]
 
+# 役种罗马音到中文的映射表
+YakuJapanese2ChineseMap = {
+    "Aka Dora": "赤宝牌",
+    "Chankan": "抢杠",
+    "Chantai": "混全带幺九",
+    "Chiitoitsu": "七对子",
+    "Chinitsu": "清一色",
+    "Dora": "宝牌",
+    "Double Riichi": "两立直",
+    "Haitei Raoyue": "海底捞月",
+    "Honitsu": "混一色",
+    "Honroutou": "混老头",
+    "Houtei Raoyui": "河底捞鱼",
+    "Iipeiko": "一杯口",
+    "Ippatsu": "一发",
+    "Ittsu": "一气通贯",
+    "Junchan": "纯全带幺九",
+    "Menzen Tsumo": "门前清自摸和",
+    "Nagashi Mangan": "流局满贯",
+    "Pinfu": "平和",
+    "Renhou": "人和（非役满）",
+    "Riichi": "立直",
+    "Rinshan Kaihou": "岭上开花",
+    "Ryanpeikou": "两杯口",
+    "San Ankou": "三暗刻",
+    "San Kantsu": "三杠子",
+    "Sanshoku Doujun": "三色同顺",
+    "Sanshoku Doukou": "三色同刻",
+    "Shou Sangen": "小三元",
+    "Tanyao": "断幺九",
+    "Toitoi": "对对和",
+    "Yakuhai (chun)": "役牌中",
+    "Yakuhai (east)": "役牌东",
+    "Yakuhai (haku)": "役牌白",
+    "Yakuhai (hatsu)": "役牌发",
+    "Yakuhai (north)": "役牌北",
+    "Yakuhai (south)": "役牌南",
+    "Yakuhai (west)": "役牌西",
+    "Yakuhai (wind of place)": "自风役牌",
+    "Yakuhai (wind of round)": "场风役牌",
+    "Chiihou": "地和",
+    "Chinroutou": "清老头",
+    "Chuuren Poutou": "九莲宝灯",
+    "Daburu Chuuren Poutou": "纯正九莲宝灯",
+    "Dai Suushii": "大四喜",
+    "Daisangen": "大三元",
+    "Daisharin": "大数邻",
+    "Kokushi Musou": "国士无双",
+    "Kokushi Musou Juusanmen Matchi": "国士无双十三面",
+    "Renhou (yakuman)": "人和（役满）",
+    "Ryuuiisou": "绿一色",
+    "Shousuushii": "小四喜",
+    "Suu Ankou": "四暗刻",
+    "Suu Ankou Tanki": "四暗刻单骑",
+    "Suu Kantsu": "四杠子",
+    "Tenhou": "天和",
+    "Tsuu Iisou": "字一色"
+}
+
 
 def format_hand_msg(msg: str) -> str:
     """
@@ -281,16 +340,14 @@ def get_hand(hand_index: Optional[int] = None) -> HandResultData:
 
     tiles_ascii_13 = format_split_hand(hand_core[:26])
 
-    yaku = [x for x in result.yaku if x.yaku_id not in [0, 1]]
-    yaku.reverse()
-    yaku_jp = [x.japanese for x in yaku]
+    yaku = [x for x in result.yaku]
+    yaku_jp = [YakuJapanese2ChineseMap.get(x.japanese, x.japanese) for x in yaku]
     tip = "提示: " + " ".join(yaku_jp)
 
     han = int(result.han or 0)
     fu = int(result.fu or 0)
     cost = int(result.cost["main"] + result.cost["additional"])
-    tsumo_tip = ",自摸" if tsumo else ""
-    han_tip = f"{han}番{fu}符 (包括立直{tsumo_tip})"
+    han_tip = f"{han}番{fu}符"
 
     return HandResultData(
         tiles_ascii_13=tiles_ascii_13,

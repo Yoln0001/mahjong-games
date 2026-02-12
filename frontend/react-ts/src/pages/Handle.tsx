@@ -352,7 +352,7 @@ export default function Handle() {
       // Sync URL
       navigate(`/handle/${encodeURIComponent(newGameId)}?userId=${encodeURIComponent(userId)}`, { replace: true });
     } catch (e: any) {
-      message.error(e?.message || "Failed to create game");
+      message.error(e?.message || "游戏创建失败");
     } finally {
       setLoading(false);
     }
@@ -375,7 +375,7 @@ export default function Handle() {
         setLoading(true);
         await restoreFromBackend(routeGameId);
       } catch (e: any) {
-        message.error(e?.message || "Failed to restore game");
+        message.error(e?.message || "游戏恢复失败");
       } finally {
         setLoading(false);
       }
@@ -496,11 +496,11 @@ export default function Handle() {
     if (submitting) return;
 
     if (currentTiles.length !== COLS) {
-      message.warning(`Need ${COLS} tiles before submitting`);
+      message.warning(`需要输入 ${COLS} 张牌才能提交`);
       return;
     }
     if (rows.length >= MAX_ROWS) {
-      message.warning("Max rows reached");
+      message.warning("最大行数限制");
       return;
     }
 
@@ -510,7 +510,7 @@ export default function Handle() {
       const res = await submitGuess(gameId, { userId, guess });
       applyGuessResult(res);
     } catch (e: any) {
-      message.error(e?.message || "Submit failed");
+      message.error(e?.message || "提交失败");
     } finally {
       setSubmitting(false);
     }
@@ -523,11 +523,11 @@ export default function Handle() {
 
     const g = textGuess.trim();
     if (!g) {
-      message.warning("Please enter a guess string");
+      message.warning("请输入猜测的字符串");
       return;
     }
     if (rows.length >= MAX_ROWS) {
-      message.warning("Max rows reached");
+      message.warning("最大行数限制");
       return;
     }
 
@@ -537,7 +537,7 @@ export default function Handle() {
       applyGuessResult(res);
       setTextGuess("");
     } catch (e: any) {
-      message.error(e?.message || "Submit failed");
+      message.error(e?.message || "提交失败");
     } finally {
       setSubmitting(false);
     }

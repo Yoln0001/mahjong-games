@@ -6,7 +6,7 @@
 
 ## 1. 项目是什么
 
-一些与麻将相关的小游戏，目前只做了一个麻将猜手牌小游戏，后续可能还会做其他麻将小游戏。
+一些与麻将相关的小游戏，目前做了麻将猜手牌与麻将连连看的小游戏，后续可能还会做其他麻将小游戏。
 
 ### 1.1 麻将猜手牌 (Mahjong Handle)
 
@@ -18,13 +18,23 @@
 
 初始页面示意图
 
-![](docs/%E7%95%8C%E9%9D%A2%E5%B1%95%E7%A4%BA%E6%88%AA%E5%9B%BE1.png)
+![image-20260212191617146](docs/%E7%8C%9C%E6%89%8B%E7%89%8C%E7%95%8C%E9%9D%A2%E5%B1%95%E7%A4%BA%E6%88%AA%E5%9B%BE1.png)
 
 游戏成功示意图
 
-![image-20260201215808374](docs/%E7%95%8C%E9%9D%A2%E5%B1%95%E7%A4%BA%E6%88%AA%E5%9B%BE2.png)
+![image-20260212191754246](docs/%E7%8C%9C%E6%89%8B%E7%89%8C%E7%95%8C%E9%9D%A2%E5%B1%95%E7%A4%BA%E6%88%AA%E5%9B%BE2.png)
 
----
+
+
+### 1.2 麻将连连看 (Mahjong Link)
+
+- **核心玩法**：从8行17列麻将牌堆中，每次选择任意一列顶部的一张牌放入暂存区中。如果暂存区有两张相同的麻将牌，则消除。如果暂存区有若干张（默认为6张）不同的麻将牌，且放入的下一张麻将牌与暂存区中所有牌都不同则失败；消除所有麻将牌则胜利。
+
+### 演示截图
+
+![image-20260212192037501](docs/%E8%BF%9E%E8%BF%9E%E7%9C%8B%E7%95%8C%E9%9D%A2%E5%B1%95%E7%A4%BA%E6%88%AA%E5%9B%BE1.png)
+
+### 演示截图
 
 ## 2. 怎么跑起来
 
@@ -40,9 +50,10 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-启动后端（默认 8000 端口）：
+设置利用内存存储数据，启动后端（默认 8000 端口）：
 
 ```
+$env:GAME_REPO="memory"
 uvicorn app.main:app --reload --port 8000
 ```
 
@@ -65,14 +76,16 @@ npm run dev
 
 ## 3. 游戏怎么玩
 
-### 3.1 基本规则
+### 3.1 麻将猜手牌
+
+#### 3.1.1 基本规则
 
 - 每局答案为 **14 张牌**。
 - 每次猜测需要提交 **14 张牌**。
 - 默认最多猜测 **6 次**（由后端参数控制）。
 - **输入不合规不会消耗猜测次数**：例如格式错误、无法解析成 14 张牌、包含非法牌等，会提示错误并要求重新输入。
 
-### 3.2 文字输入格式（示例）
+#### 3.1.2 文字输入格式（示例）
 
 文字输入采用紧凑编码（常见日麻牌谱编码风格），示例：
 
@@ -90,13 +103,23 @@ npm run dev
   - 万/筒/索：`1-9`
   - 字牌：`1-7`（对应「东南西北白发中」）
 
-### 3.3 判色规则（反馈机制）
+#### 3.1.3 判色规则（反馈机制）
 
 每次提交后，系统会对 14 张牌给出反馈（通常包含以下三类）：
 
 - **蓝色（完全正确）**：牌的“种类”和“位置”都正确。
 - **黄色（存在但位置不对）**：该牌在答案中存在，但当前放置位置不正确。
 - **灰色（不存在）**：该牌不在答案中，若你猜测某牌出现次数 > 答案中该牌出现次数，多余的会判为“不存在”。
+
+### 3.2 麻将连连看
+
+#### 3.2.1 基本规则
+
+- 场上共有 136 张牌，摆成 8 行 17 列。
+- 每一列只能拿最上面那一张牌。
+- 拿到的牌放进暂存区；如果放入的牌和暂存区里已有的牌一样，就会立刻消掉这一对。
+- 暂存区最多放 6 张牌，放满之后，放入的下一张牌没有和已有的牌消除就算失败。
+- 所有牌都消完就算胜利。
 
 ------
 
@@ -221,7 +244,7 @@ uvicorn app.main:app --reload --port 8000
 
 ### 7.3 数据结构约定
 
-#### 7.3.1 颜色枚举（Wordle 判色）
+#### 7.3.1 猜手牌游戏颜色枚举
 
 `colors14` 是长度为 14 的数组，每项为以下之一：
 
@@ -236,25 +259,13 @@ uvicorn app.main:app --reload --port 8000
 - 数牌：`1m..9m`（万） / `1p..9p`（筒） / `1s..9s`（索）
 - 字牌：`1z..7z`（东南西北白发中）
 
-#### 7.3.3 提示对象（hint）
+### 7.4 猜手牌相关API
 
-```json
-"hint": {
-  "tip": "提示: ...",
-  "hanTip": "X番Y符 Z点 (包括立直,自摸)"
-}
-```
-
-说明：
-
-- `tip`：答案役种提示（通常为日文役名列表拼接）
-- `hanTip`：答案番/符/得点提示（格式对齐 Python handler 口径）
-
-### 7.4 开局：POST `/game/start`
+#### 7.4.1 开局：POST `/handle/start`
 
 创建新的一局游戏。
 
-#### 7.4.1 Request
+##### 7.4.1.1 Request
 
 ```json
 {
@@ -270,7 +281,7 @@ uvicorn app.main:app --reload --port 8000
 - `maxGuess`：最大猜测次数（可选，默认6）
 - `handIndex`：调试用，指定题库索引（可选）
 
-#### 7.4.2 Response（成功）
+##### 7.4.1.2 Response（成功）
 
 ```json
 {
@@ -281,7 +292,7 @@ uvicorn app.main:app --reload --port 8000
     "createdAt": 1769957119.5193772,
     "hint": {
       "yakuTip": "Tanyao",
-      "hanTip": "2番40符 (包括立直)",
+      "hanTip": "2番40符",
       "windTip": "自风：西，场风：南",
       "isTsumo": "荣和"
     }
@@ -294,11 +305,11 @@ uvicorn app.main:app --reload --port 8000
 
 - `gameId`：该局唯一标识。后续 guess/status/reset 均需携带。
 
-### 7.5 提交猜测：POST `/game/{gameId}/guess`
+#### 7.4.2 提交猜测：POST `/handle/{gameId}/guess`
 
 提交一次猜测，返回判色结果与剩余次数等信息。
 
-#### 7.5.1 Request
+##### 7.4.2.1 Request
 
 ```json
 {
@@ -315,7 +326,7 @@ uvicorn app.main:app --reload --port 8000
   - 可支持中文牌名混输（由后端转换）
   - 输入合法性由后端校验，非法将返回 `ok=false`
 
-#### 7.5.2 Response（成功：合法提交）
+##### 7.4.2.2 Response（成功：合法提交）
 
 ```
 {
@@ -331,7 +342,7 @@ uvicorn app.main:app --reload --port 8000
     "gameCreatedAt": 1769957119.5193772,
     "hint": {
       "yakuTip": "Tanyao",
-      "hanTip": "2番40符 (包括立直)",
+      "hanTip": "2番40符",
       "windTip": "自风：西，场风：南",
       "isTsumo": "荣和"
     }
@@ -352,7 +363,7 @@ uvicorn app.main:app --reload --port 8000
 - `gameCreatedAt`游戏创建时间
 - `hint`：答案提示（与 start/status 保持一致）
 
-#### 7.5.3 Response（失败：非法输入，不扣次数）
+##### 7.4.2.3 Response（失败：非法输入，不扣次数）
 
 ```
 {
@@ -372,41 +383,11 @@ uvicorn app.main:app --reload --port 8000
 
 - 当 `ok=false` 时：**后端保证不扣次数、不写入历史记录**。
 
-#### 7.5.4 Response（失败：游戏次数耗尽）
-
-```
-{
-  "ok": true,
-  "data": {
-    "guessTiles14": ["1m","2m","3m","1p","2p","3p","1s","2s","3s","1z","1z","5z","...","..."],
-    "colors14": ["gray","orange","blue","...","..."],
-    "remain": 0,
-    "finish": false,
-    "win": false,
-    "createdAt": 1769957172.2428248,
-    "hitCountValid": 6,
-    "gameCreatedAt": 1769957119.5193772,
-    "hint": {
-      "yakuTip": "Tanyao",
-      "hanTip": "2番40符 (包括立直)",
-      "windTip": "自风：西，场风：南",
-      "isTsumo": "荣和"
-    }
-    "answerTiles14": ["1m","2m","..."],
-  },
-  "error": null
-}
-```
-
-字段说明：
-
-- `answerTiles14`：正确答案
-
-### 7.6 查看状态：GET `/game/{gameId}/status?userId=...`
+#### 7.4.3 查看状态：GET `/handle/{gameId}/status?userId=...`
 
 用于刷新/断线重连恢复当前局状态与历史记录。
 
-#### 7.6.1 Response（成功）
+##### 7.4.3.1 Response（成功）
 
 ```
 {
@@ -429,7 +410,6 @@ uvicorn app.main:app --reload --port 8000
       "tip": "提示: ...",
       "hanTip": "..."
     }
-    "answerTiles14": ["1m","2m","..."],
   },
   "error": null
 }
@@ -440,11 +420,11 @@ uvicorn app.main:app --reload --port 8000
 - `hitCountValid`：已进行的“合法提交”次数
 - `history`：仅包含合法提交产生的历史记录（非法输入不会写入）
 
-### 7.7 重开：POST `/game/{gameId}/reset`
+#### 7.4.4 重开：POST `/game/{gameId}/reset`
 
 删除旧局并创建新局，返回新的 `gameId`。
 
-#### 7.7.1 Request
+##### 7.4.4.1 Request
 
 ```
 {
@@ -454,7 +434,7 @@ uvicorn app.main:app --reload --port 8000
 }
 ```
 
-#### 7.7.2 Response（成功）
+##### 7.4.4.2 Response（成功）
 
 ```
 {
@@ -468,7 +448,7 @@ uvicorn app.main:app --reload --port 8000
 }
 ```
 
-### 7.8 错误码（Error Codes）
+#### 7.4.5 错误码（Error Codes）
 
 | code             | 含义                        | 典型触发场景                     |
 | ---------------- | --------------------------- | -------------------------------- |
@@ -478,3 +458,185 @@ uvicorn app.main:app --reload --port 8000
 | NO_YAKU          | 无役（按规则判为非法）      | 能和牌但 0 番                    |
 | GAME_FINISHED    | 游戏已结束仍提交            | finish=true 后再次 guess         |
 | GAME_NOT_FOUND   | gameId 不存在/已过期        | status/guess/reset 指向不存在局  |
+
+### 7.5 连连看相关API
+
+#### 7.5.1 开局：POST `/link/start`
+
+创建新的一局连连看游戏。
+
+##### 7.5.1.1 Request
+
+```json
+{
+  "userId": "u1",
+  "handIndex": null,
+  "tempLimit": 7
+}
+```
+
+字段说明：
+
+- `userId`：用户标识（必填）
+- `handIndex`：调试用，指定题库索引（可选）
+- `tempLimit`：暂存区容量（可选，默认 7）
+
+##### 7.5.1.2 Response（成功）
+
+```json
+{
+  "ok": true,
+  "data": {
+    "gameId": "abc123...",
+    "createdAt": 1769957119.5193772,
+    "columns": [["1m","2m","..."], ["..."]],
+    "topTiles": ["1m", "2p", null, "..."],
+    "columnCounts": [8,8,0,"..."],
+    "tempSlots": [],
+    "tempLimit": 7,
+    "remainTiles": 136,
+    "finish": false,
+    "win": false,
+    "failReason": null
+  },
+  "error": null
+}
+```
+
+字段说明：
+
+- `columns`：17 列牌堆（每列从底到顶）
+- `topTiles`：每列栈顶牌（空列为 `null`）
+- `columnCounts`：每列剩余张数
+- `tempSlots`：暂存区当前牌
+- `tempLimit`：暂存区容量
+- `remainTiles`：剩余牌总数（列中 + 暂存区）
+- `finish`：是否结束
+- `win`：是否胜利
+- `failReason`：失败原因（可为空）
+
+#### 7.5.2 取牌：POST `/link/{gameId}/pick`
+
+从指定列取栈顶牌并更新状态。
+
+##### 7.5.2.1 Request
+
+```json
+{
+  "userId": "u1",
+  "column": 3
+}
+```
+
+字段说明：
+
+- `userId`：用户标识（必填）
+- `column`：列索引（0-16）
+
+##### 7.5.2.2 Response（成功）
+
+```json
+{
+  "ok": true,
+  "data": {
+    "picked": { "column": 3, "tile": "5p" },
+    "removed": { "tile": "5p", "count": 2 },
+    "columns": [["..."], ["..."]],
+    "topTiles": ["..."],
+    "columnCounts": [8,7,8,"..."],
+    "tempSlots": ["1m","3p","..."],
+    "tempLimit": 7,
+    "remainTiles": 120,
+    "finish": false,
+    "win": false,
+    "failReason": null
+  },
+  "error": null
+}
+```
+
+字段说明：
+
+- `picked`：本次取牌信息
+- `removed`：若形成一对消除，返回被消除的牌（否则为 `null`）
+- 其余字段与 `start/status` 相同
+
+##### 7.5.2.3 Response（失败）
+
+```
+{
+  "ok": false,
+  "data": null,
+  "error": {
+    "code": "COLUMN_EMPTY",
+    "message": "COLUMN_EMPTY",
+    "detail": null
+  }
+}
+```
+
+常见错误码：`GAME_FINISHED`、`COLUMN_EMPTY`、`COLUMN_OUT_OF_RANGE`。
+
+#### 7.5.3 查看状态：GET `/link/{gameId}/status?userId=...`
+
+用于刷新/断线重连恢复当前局状态。
+
+##### 7.5.3.1 Response（成功）
+
+```json
+{
+  "ok": true,
+  "data": {
+    "gameId": "abc123...",
+    "createdAt": 1769957119.5193772,
+    "columns": [["..."], ["..."]],
+    "topTiles": ["..."],
+    "columnCounts": [8,7,8,"..."],
+    "tempSlots": ["1m","3p","..."],
+    "tempLimit": 7,
+    "remainTiles": 120,
+    "finish": false,
+    "win": false,
+    "failReason": null
+  },
+  "error": null
+}
+```
+
+#### 7.5.4 重开：POST `/link/{gameId}/reset`
+
+删除旧局并创建新局，返回新的 `gameId`。
+
+##### 7.5.4.1 Request
+
+```json
+{
+  "userId": "u1",
+  "handIndex": null,
+  "tempLimit": 7
+}
+```
+
+##### 7.5.4.2 Response（成功）
+
+```json
+{
+  "ok": true,
+  "data": {
+    "gameId": "newGameId...",
+    "createdAt": 1769957200.123
+  },
+  "error": null
+}
+```
+
+#### 7.5.5 错误码（Error Codes）
+
+| code                | 含义                     | 典型触发场景            |
+| ------------------- | ------------------------ | ----------------------- |
+| GAME_NOT_FOUND      | gameId 不存在/已过期     | status/guess/reset 失败 |
+| GAME_FINISHED       | 游戏已结束仍取牌         | finish=true 后仍 pick   |
+| COLUMN_OUT_OF_RANGE | 列索引非法               | column 不在 0-16        |
+| COLUMN_EMPTY        | 该列为空                 | 取牌列已空              |
+| START_FAILED        | 开局失败                 | 题库错误等              |
+

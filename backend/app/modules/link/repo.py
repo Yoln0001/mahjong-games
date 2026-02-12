@@ -122,7 +122,7 @@ class RedisLinkRepo:
 
 def create_link_repo_from_env() -> LinkRepo:
     repo_type = os.getenv("GAME_REPO", "memory").lower()
-    ttl = int(os.getenv("GAME_TTL_SECONDS", str(60 * 60)))
+    ttl = int(os.getenv("GAME_TTL_SECONDS", str(24 * 60 * 60)))
 
     if repo_type == "redis":
         redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")

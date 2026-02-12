@@ -288,7 +288,7 @@ def create_handle_repo_from_env() -> GameRepo:
     但内部默认 key 前缀已切到 handle 命名空间，并支持读取旧 game 命名空间数据。
     """
     repo_type = os.getenv("GAME_REPO", "memory").lower()
-    ttl = int(os.getenv("GAME_TTL_SECONDS", str(60 * 60)))
+    ttl = int(os.getenv("GAME_TTL_SECONDS", str(24 * 60 * 60)))
 
     if repo_type == "redis":
         redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")

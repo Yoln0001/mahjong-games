@@ -1194,6 +1194,19 @@ html, body {
     color: #ffffff !important;
 }
 
+.theme-modal.theme-noir .ant-modal-body,
+.theme-modal.theme-noir .ant-modal-body .ant-typography,
+.theme-modal.theme-noir .ant-modal-body ul,
+.theme-modal.theme-noir .ant-modal-body li,
+.theme-modal.theme-noir .ant-modal-body p,
+.theme-modal.theme-arcade .ant-modal-body,
+.theme-modal.theme-arcade .ant-modal-body .ant-typography,
+.theme-modal.theme-arcade .ant-modal-body ul,
+.theme-modal.theme-arcade .ant-modal-body li,
+.theme-modal.theme-arcade .ant-modal-body p {
+    color: #ffffff !important;
+}
+
 .theme-modal .theme-option {
     width: 100%;
 }

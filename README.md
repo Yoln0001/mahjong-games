@@ -132,8 +132,8 @@ npm run dev
 
 ### 4.2 API 文档入口（FastAPI）
 
-- Swagger UI：`http://localhost:8000/docs`
-- ReDoc：`http://localhost:8000/redoc`
+- Swagger UI：`http://localhost:8000/api/docs`
+- ReDoc：`http://localhost:8000/api/redoc`
 
 ------
 

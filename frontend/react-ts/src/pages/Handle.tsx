@@ -827,10 +827,16 @@ export default function Handle() {
         </div>
       </div>
 
-      <Modal title="游戏简介" open={infoOpen} onCancel={() => setInfoOpen(false)} footer={null}>
+      <Modal
+        title={<b>游戏简介</b>}
+        open={infoOpen}
+        onCancel={() => setInfoOpen(false)}
+        footer={null}
+        className={`theme-modal theme-${themeStyle}`}
+      >
         <Typography.Paragraph style={{ marginBottom: 8 }}>
-          本游戏为“猜手牌”的 Wordle 类玩法。
-          每次输入一手牌，系统会对每一张牌给出判色反馈。
+          每局有一个隐藏答案，玩家最多进行 6 次猜测。每次提交 14 张牌后，系统给出判色反馈，帮助你逐步逼近正确答案。
+          一共有 6 次猜测机会，每张牌判色均为蓝色则成功，6 次机会耗尽则失败。
         </Typography.Paragraph>
 
         <Divider style={{ margin: "12px 0" }} />
@@ -840,7 +846,7 @@ export default function Handle() {
           <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.8 }}>
             <li><b>蓝色</b>：该位置的牌完全正确（牌种 + 位置都正确）。</li>
             <li><b>橙色</b>：该牌存在于答案中，但位置不正确。</li>
-            <li><b>灰色</b>：答案中不存在该牌，或你输入的该牌数量超过答案中的可用数量。</li>
+            <li><b>灰色</b>：答案中不存在该牌，或输入的该牌数量超过答案中的可用数量。</li>
           </ul>
         </Typography.Paragraph>
 
@@ -849,12 +855,18 @@ export default function Handle() {
         <Typography.Title level={5} style={{ marginTop: 0 }}>文字输入说明</Typography.Title>
         <Typography.Paragraph style={{ marginBottom: 0 }}>
           文字输入模式下，请在输入框中直接输入 14 张牌的字符串编码，例如：123m456p789s11555z.
-          其中 m/p/s/z 分别表示万/筒/索/字，1-7z 分别对应 东南西北白发中。
+          其中 m/p/s/z 分别表示万/筒/索/字，1至7z 分别对应”东南西北白发中“。
           输入不符合格式时，会提示错误且不消耗猜测次数。
         </Typography.Paragraph>
       </Modal>
 
-      <Modal title="模式切换" open={modeOpen} onCancel={() => setModeOpen(false)} footer={null}>
+      <Modal
+        title="模式切换"
+        open={modeOpen}
+        onCancel={() => setModeOpen(false)}
+        footer={null}
+        className={`theme-modal theme-${themeStyle}`}
+      >
         <Typography.Paragraph style={{ marginBottom: 12 }}>
           选择模式
         </Typography.Paragraph>

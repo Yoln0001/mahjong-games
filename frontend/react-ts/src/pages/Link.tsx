@@ -1,10 +1,10 @@
 ﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { message, Modal } from "antd";
-import { InfoCircleOutlined } from "@ant-design/icons";
+import { message, Modal, Switch } from "antd";
+import { InfoCircleOutlined, SettingOutlined } from "@ant-design/icons";
 
 import TileCell from "../components/TileCell";
-import { useThemeMode } from "../App";
+import { useThemeMode, useThemeStyle } from "../App";
 import { getOrCreateUserId, normalizeUserId } from "../utils/userId";
 import {
     getLinkStatus,
@@ -81,6 +81,7 @@ function normalizeState(
 
 export default function Link() {
     const { themeMode } = useThemeMode();
+    const { themeStyle } = useThemeStyle();
     const navigate = useNavigate();
     const params = useParams<{ gameId: string }>();
     const [searchParams] = useSearchParams();
@@ -95,6 +96,8 @@ export default function Link() {
     const [picking, setPicking] = useState(false);
     const [hoverTile, setHoverTile] = useState<string | null>(null);
     const [ruleOpen, setRuleOpen] = useState(false);
+    const [assistOpen, setAssistOpen] = useState(false);
+    const [tileHintEnabled, setTileHintEnabled] = useState(true);
     const [endOpen, setEndOpen] = useState(false);
     const [endDurationSec, setEndDurationSec] = useState<number>(0);
 
@@ -150,6 +153,13 @@ export default function Link() {
         setEndDurationSec(createdAt ? Math.max(0, Math.floor(nowSec - createdAt)) : 0);
         setEndOpen(true);
     }, [state.finish]);
+
+    // 关闭提示功能时，立即清掉当前高亮，避免残留状态
+    useEffect(() => {
+        if (!tileHintEnabled) {
+            setHoverTile(null);
+        }
+    }, [tileHintEnabled]);
 
     // 开始新局
     const onStartNew = useCallback(async () => {
@@ -257,6 +267,10 @@ export default function Link() {
                         <InfoCircleOutlined style={{ marginRight: 6 }} />
                         规则介绍
                     </button>
+                    <button className="modern-btn" type="button" onClick={() => setAssistOpen(true)}>
+                        <SettingOutlined style={{ marginRight: 6 }} />
+                        辅助功能
+                    </button>
                 </div>
 
                 <div className="modern-grid">
@@ -268,7 +282,7 @@ export default function Link() {
                                 const tile = col[rIdx] ?? "";
                                 const isTop = col.length > 0 && rIdx === col.length - 1;
                                 const disabled = !isTop || state.finish || loading || picking;
-                                const shouldHighlight = !!hoverTile && tile === hoverTile;
+                                const shouldHighlight = tileHintEnabled && !!hoverTile && tile === hoverTile;
                                 const highlightStyle = shouldHighlight
                                     ? { background: "rgba(22, 119, 255, 0.16)" }
                                     : undefined;
@@ -284,7 +298,9 @@ export default function Link() {
                                         key={`${rIdx}-${cIdx}`}
                                         className="link-tile-wrap"
                                         onClick={() => (isTop ? onPickColumn(cIdx) : undefined)}
-                                        onMouseEnter={() => setHoverTile(tile || null)}
+                                        onMouseEnter={() => {
+                                            if (tileHintEnabled) setHoverTile(tile || null);
+                                        }}
                                         onMouseLeave={() => setHoverTile(null)}
                                         style={{
                                             width: 44,
@@ -328,7 +344,9 @@ export default function Link() {
                                 <div
                                     key={`${t}-${i}`}
                                     className="link-tile-wrap"
-                                    onMouseEnter={() => setHoverTile(t)}
+                                    onMouseEnter={() => {
+                                        if (tileHintEnabled) setHoverTile(t);
+                                    }}
                                     onMouseLeave={() => setHoverTile(null)}
                                         style={{
                                             width: 44,
@@ -339,7 +357,10 @@ export default function Link() {
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "center",
-                                        background: hoverTile === t ? "rgba(22, 119, 255, 0.16)" : "#fff",
+                                        background:
+                                            tileHintEnabled && hoverTile === t
+                                                ? "rgba(22, 119, 255, 0.16)"
+                                                : "#fff",
                                     }}
                                 >
                                     <TileCell
@@ -354,7 +375,9 @@ export default function Link() {
                                             border: "none",
                                             boxShadow: "none",
                                             borderRadius: 10,
-                                            ...(hoverTile === t ? { background: "rgba(22, 119, 255, 0.16)" } : undefined),
+                                            ...(tileHintEnabled && hoverTile === t
+                                                ? { background: "rgba(22, 119, 255, 0.16)" }
+                                                : undefined),
                                         }}
                                     />
                                 </div>
@@ -371,6 +394,7 @@ export default function Link() {
                 open={ruleOpen}
                 onCancel={() => setRuleOpen(false)}
                 footer={null}
+                className={`theme-modal theme-${themeStyle}`}
             >
                 <div style={{ lineHeight: 1.7 }}>
                     <ul style={{ margin: 0, paddingLeft: 18, listStyleType: "circle" }}>
@@ -380,6 +404,22 @@ export default function Link() {
                         <li>暂存区最多放 6 张牌，放满之后，放入的下一张牌没有和已有的牌消除就算失败。</li>
                         <li>所有牌都消完就算胜利。</li>
                     </ul>
+                </div>
+            </Modal>
+
+            <Modal
+                title="辅助功能"
+                open={assistOpen}
+                onCancel={() => setAssistOpen(false)}
+                footer={null}
+                className={`theme-modal theme-${themeStyle}`}
+            >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                    <div>
+                        <div style={{ fontWeight: 600 }}>手牌提示</div>
+                        <div style={{ opacity: 0.72, fontSize: 13, marginTop: 4 }}>相同手牌高亮显示</div>
+                    </div>
+                    <Switch checked={tileHintEnabled} onChange={setTileHintEnabled} />
                 </div>
             </Modal>
 

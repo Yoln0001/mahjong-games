@@ -15,7 +15,7 @@ import type {
 /**
  * 全局 API 基础前缀（通常用于后端 include_router(prefix="/api") 的场景）
  * - 默认 "/api"
- * - 如果后端无前缀：在 .env.local 设置 VITE_API_PREFIX=
+ * - 目前后端就是用的这种形式
  */
 const API_PREFIX: string = (import.meta as any).env?.VITE_API_PREFIX ?? "/api";
 
@@ -23,8 +23,6 @@ const API_PREFIX: string = (import.meta as any).env?.VITE_API_PREFIX ?? "/api";
  * 业务模块前缀（建议后端分别挂载）
  * - handle：/handle
  *
- * 可在 .env.local 覆盖：
- *   VITE_HANDLE_PREFIX=/game   （如果你后端暂时仍用 /game）
  */
 const HANDLE_PREFIX: string = (import.meta as any).env?.VITE_HANDLE_PREFIX ?? "/handle";
 

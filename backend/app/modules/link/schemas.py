@@ -32,6 +32,7 @@ class StartReq(BaseModel):
     userId: str = Field(..., min_length=1)
     handIndex: Optional[int] = None
     tempLimit: Optional[int] = Field(None, ge=1, le=20)
+    undoUnlimited: Optional[bool] = None
 
 
 class PickReq(BaseModel):
@@ -41,9 +42,24 @@ class PickReq(BaseModel):
     column: int = Field(..., ge=0, le=16)
 
 
+class UndoReq(BaseModel):
+    """从暂存区撤回一张牌。"""
+
+    userId: str = Field(..., min_length=1)
+    slotIndex: int = Field(..., ge=0, le=19)
+
+
+class AssistReq(BaseModel):
+    """更新辅助功能配置。"""
+
+    userId: str = Field(..., min_length=1)
+    undoUnlimited: Optional[bool] = None
+
+
 class ResetReq(BaseModel):
     """重开请求参数。"""
 
     userId: str = Field(..., min_length=1)
     handIndex: Optional[int] = None
     tempLimit: Optional[int] = Field(None, ge=1, le=20)
+    undoUnlimited: Optional[bool] = None

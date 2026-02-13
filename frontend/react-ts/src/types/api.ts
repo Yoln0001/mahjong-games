@@ -105,6 +105,7 @@ export interface LinkStartReq {
     userId: string;
     handIndex?: number;
     tempLimit?: number;
+    undoUnlimited?: boolean;
 }
 
 /** /link/start 返回 data */
@@ -120,6 +121,8 @@ export interface LinkStartData {
     finish: boolean;
     win: boolean;
     failReason?: string | null;
+    undoUnlimited?: boolean;
+    canUndo?: boolean;
 }
 
 /** /link/{gameId}/pick 请求 */
@@ -141,6 +144,30 @@ export interface LinkPickData {
     finish: boolean;
     win: boolean;
     failReason?: string | null;
+    undoUnlimited?: boolean;
+    canUndo?: boolean;
+}
+
+/** /link/{gameId}/undo 请求 */
+export interface LinkUndoReq {
+    userId: string;
+    slotIndex: number;
+}
+
+/** /link/{gameId}/undo 返回 data */
+export interface LinkUndoData {
+    undone: { slotIndex: number; tile: string; column: number };
+    columns: string[][];
+    topTiles: Array<string | null>;
+    columnCounts: number[];
+    tempSlots: string[];
+    tempLimit: number;
+    remainTiles: number;
+    finish: boolean;
+    win: boolean;
+    failReason?: string | null;
+    undoUnlimited?: boolean;
+    canUndo?: boolean;
 }
 
 /** /link/{gameId}/status 返回 data */
@@ -156,6 +183,14 @@ export interface LinkStatusData {
     finish: boolean;
     win: boolean;
     failReason?: string | null;
+    undoUnlimited?: boolean;
+    canUndo?: boolean;
+}
+
+/** /link/{gameId}/assist 请求 */
+export interface LinkAssistReq {
+    userId: string;
+    undoUnlimited?: boolean;
 }
 
 /** /link/{gameId}/reset 请求 */
@@ -163,6 +198,7 @@ export interface LinkResetReq {
     userId: string;
     handIndex?: number;
     tempLimit?: number;
+    undoUnlimited?: boolean;
 }
 
 /** /link/{gameId}/reset 返回 data */

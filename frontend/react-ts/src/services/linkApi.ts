@@ -3,6 +3,9 @@ import type {
     ApiResponse,
     LinkPickData,
     LinkPickReq,
+    LinkUndoData,
+    LinkUndoReq,
+    LinkAssistReq,
     LinkResetData,
     LinkResetReq,
     LinkStartData,
@@ -73,6 +76,30 @@ export async function pickLinkTile(
 ): Promise<LinkPickData> {
     const resp = await api.post<ApiResponse<LinkPickData>>(
         buildUrl(`/${encodeURIComponent(gameId)}/pick`),
+        payload
+    );
+    return assertApiOk(resp.data);
+}
+
+/** 从暂存区撤回：POST {API_PREFIX}{LINK_PREFIX}/{gameId}/undo */
+export async function undoLinkTile(
+    gameId: string,
+    payload: LinkUndoReq
+): Promise<LinkUndoData> {
+    const resp = await api.post<ApiResponse<LinkUndoData>>(
+        buildUrl(`/${encodeURIComponent(gameId)}/undo`),
+        payload
+    );
+    return assertApiOk(resp.data);
+}
+
+/** 更新辅助功能：POST {API_PREFIX}{LINK_PREFIX}/{gameId}/assist */
+export async function setLinkAssist(
+    gameId: string,
+    payload: LinkAssistReq
+): Promise<LinkStatusData> {
+    const resp = await api.post<ApiResponse<LinkStatusData>>(
+        buildUrl(`/${encodeURIComponent(gameId)}/assist`),
         payload
     );
     return assertApiOk(resp.data);

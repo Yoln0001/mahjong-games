@@ -1,7 +1,7 @@
 ﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { message, Modal, Switch } from "antd";
-import { InfoCircleOutlined, SettingOutlined } from "@ant-design/icons";
+import { InfoCircleOutlined, RollbackOutlined, SettingOutlined } from "@ant-design/icons";
 
 import TileCell from "../components/TileCell";
 import { useThemeMode, useThemeStyle } from "../App";
@@ -9,8 +9,10 @@ import { getOrCreateUserId, normalizeUserId } from "../utils/userId";
 import {
     getLinkStatus,
     pickLinkTile,
+    setLinkAssist,
     resetLinkGame,
     startLinkGame,
+    undoLinkTile,
 } from "../services/linkApi";
 import type {
     LinkPickData,
@@ -30,6 +32,8 @@ type GameState = {
     tempSlots: string[];
     tempLimit: number;
     remainTiles: number;
+    undoUnlimited: boolean;
+    canUndo: boolean;
     finish: boolean;
     win: boolean;
     failReason?: string | null;
@@ -43,6 +47,8 @@ const emptyState: GameState = {
     tempSlots: [],
     tempLimit: 7,
     remainTiles: 0,
+    undoUnlimited: false,
+    canUndo: false,
     finish: false,
     win: false,
     failReason: null,
@@ -72,6 +78,9 @@ function normalizeState(
         tempSlots: data.tempSlots ?? prev?.tempSlots ?? [],
         tempLimit: data.tempLimit ?? prev?.tempLimit ?? 7,
         remainTiles: data.remainTiles ?? prev?.remainTiles ?? 0,
+        undoUnlimited:
+            typeof data.undoUnlimited === "boolean" ? data.undoUnlimited : (prev?.undoUnlimited ?? false),
+        canUndo: typeof data.canUndo === "boolean" ? data.canUndo : (prev?.canUndo ?? false),
         finish: typeof data.finish === "boolean" ? data.finish : !!prev?.finish,
         win: typeof data.win === "boolean" ? data.win : !!prev?.win,
         failReason: data.failReason ?? prev?.failReason ?? null,
@@ -165,7 +174,7 @@ export default function Link() {
     const onStartNew = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await startLinkGame({ userId });
+            const res = await startLinkGame({ userId, undoUnlimited: state.undoUnlimited });
             applyState(res);
             setGameId(res.gameId);
             lastFinishRef.current = false;
@@ -181,14 +190,17 @@ export default function Link() {
         } finally {
             setLoading(false);
         }
-    }, [applyState, navigate, userId]);
+    }, [applyState, navigate, state.undoUnlimited, userId]);
 
     // 重开当前局
     const onReset = useCallback(async () => {
         if (!gameId) return;
         try {
             setLoading(true);
-            const res = await resetLinkGame(gameId, { userId });
+            const res = await resetLinkGame(gameId, {
+                userId,
+                undoUnlimited: state.undoUnlimited,
+            });
             const newId = res.gameId;
             const status = await getLinkStatus(newId, userId);
             applyState(status);
@@ -205,7 +217,40 @@ export default function Link() {
         } finally {
             setLoading(false);
         }
-    }, [applyState, gameId, navigate, userId]);
+    }, [applyState, gameId, navigate, state.undoUnlimited, userId]);
+
+    // 撤回一步：将暂存区最后一张牌返还到来源列
+    const onUndo = useCallback(async () => {
+        if (!gameId) return;
+        if (loading || picking || state.finish || !state.canUndo || state.tempSlots.length === 0) return;
+
+        try {
+            setPicking(true);
+            const res = await undoLinkTile(gameId, {
+                userId,
+                slotIndex: state.tempSlots.length - 1,
+            });
+            applyState(res);
+        } catch (e: any) {
+            message.error(e?.message || "撤回失败");
+        } finally {
+            setPicking(false);
+        }
+    }, [applyState, gameId, loading, picking, state.canUndo, state.finish, state.tempSlots.length, userId]);
+
+    // 辅助功能：是否允许无限撤回
+    const onToggleUndoUnlimited = useCallback(
+        async (checked: boolean) => {
+            if (!gameId) return;
+            try {
+                const res = await setLinkAssist(gameId, { userId, undoUnlimited: checked });
+                applyState(res);
+            } catch (e: any) {
+                message.error(e?.message || "辅助功能更新失败");
+            }
+        },
+        [applyState, gameId, userId]
+    );
 
     // 选择列取牌
     const onPickColumn = useCallback(
@@ -270,6 +315,15 @@ export default function Link() {
                     <button className="modern-btn" type="button" onClick={() => setAssistOpen(true)}>
                         <SettingOutlined style={{ marginRight: 6 }} />
                         辅助功能
+                    </button>
+                    <button
+                        className="modern-btn"
+                        type="button"
+                        onClick={onUndo}
+                        disabled={loading || picking || state.finish || !state.canUndo || state.tempSlots.length === 0}
+                    >
+                        <RollbackOutlined style={{ marginRight: 6 }} />
+                        撤回
                     </button>
                 </div>
 
@@ -414,12 +468,23 @@ export default function Link() {
                 footer={null}
                 className={`theme-modal theme-${themeStyle}`}
             >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                    <div>
-                        <div style={{ fontWeight: 600 }}>手牌提示</div>
-                        <div style={{ opacity: 0.72, fontSize: 13, marginTop: 4 }}>相同手牌高亮显示</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                        <div>
+                            <div style={{ fontWeight: 600 }}>手牌提示</div>
+                            <div style={{ opacity: 0.72, fontSize: 13, marginTop: 4 }}>相同手牌高亮显示</div>
+                        </div>
+                        <Switch checked={tileHintEnabled} onChange={setTileHintEnabled} />
                     </div>
-                    <Switch checked={tileHintEnabled} onChange={setTileHintEnabled} />
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                        <div>
+                            <div style={{ fontWeight: 600 }}>无限撤回</div>
+                            <div style={{ opacity: 0.72, fontSize: 13, marginTop: 4 }}>
+                                关闭时每步最多撤回一次，开启后可连续撤回
+                            </div>
+                        </div>
+                        <Switch checked={state.undoUnlimited} onChange={onToggleUndoUnlimited} />
+                    </div>
                 </div>
             </Modal>
 

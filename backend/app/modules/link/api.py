@@ -8,8 +8,22 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.api.deps import link_repo, log
-from app.modules.link.domain import create_game, pick_tile, to_status_payload
-from app.modules.link.schemas import ApiError, ApiResponse, PickReq, ResetReq, StartReq
+from app.modules.link.domain import (
+    create_game,
+    pick_tile,
+    set_assist_options,
+    to_status_payload,
+    undo_tile,
+)
+from app.modules.link.schemas import (
+    ApiError,
+    ApiResponse,
+    AssistReq,
+    PickReq,
+    ResetReq,
+    StartReq,
+    UndoReq,
+)
 
 router = APIRouter()
 
@@ -18,7 +32,11 @@ router = APIRouter()
 def start(req: StartReq) -> ApiResponse:
     """开始新局。"""
     try:
-        state = create_game(hand_index=req.handIndex, temp_limit=req.tempLimit)
+        state = create_game(
+            hand_index=req.handIndex,
+            temp_limit=req.tempLimit,
+            undo_unlimited=req.undoUnlimited,
+        )
     except Exception as e:
         return ApiResponse(ok=False, data=None, error=ApiError(code="START_FAILED", message=str(e)))
 
@@ -50,6 +68,36 @@ def pick(game_id: str, req: PickReq) -> ApiResponse:
     return ApiResponse(ok=True, data=result, error=None)
 
 
+@router.post("/{game_id}/undo", response_model=ApiResponse)
+def undo(game_id: str, req: UndoReq) -> ApiResponse:
+    """从暂存区撤回一张牌，返还到其来源列。"""
+    try:
+        result = link_repo.update(game_id, lambda state: undo_tile(state, req.slotIndex))
+    except KeyError:
+        return ApiResponse(ok=False, data=None, error=ApiError(code="GAME_NOT_FOUND", message="gameId 不存在"))
+    except ValueError as e:
+        code = str(e)
+        return ApiResponse(ok=False, data=None, error=ApiError(code=code, message=code))
+
+    log.info("link_undo gameId=%s userId=%s slotIndex=%s", game_id, req.userId, req.slotIndex)
+    return ApiResponse(ok=True, data=result, error=None)
+
+
+@router.post("/{game_id}/assist", response_model=ApiResponse)
+def assist(game_id: str, req: AssistReq) -> ApiResponse:
+    """更新辅助功能配置。"""
+    try:
+        result = link_repo.update(game_id, lambda state: set_assist_options(state, req.undoUnlimited))
+    except KeyError:
+        return ApiResponse(ok=False, data=None, error=ApiError(code="GAME_NOT_FOUND", message="gameId 不存在"))
+    except ValueError as e:
+        code = str(e)
+        return ApiResponse(ok=False, data=None, error=ApiError(code=code, message=code))
+
+    log.info("link_assist gameId=%s userId=%s undoUnlimited=%s", game_id, req.userId, req.undoUnlimited)
+    return ApiResponse(ok=True, data=result, error=None)
+
+
 @router.get("/{game_id}/status", response_model=ApiResponse)
 def status(game_id: str, userId: str) -> ApiResponse:
     """获取当前游戏状态。"""
@@ -64,7 +112,11 @@ def status(game_id: str, userId: str) -> ApiResponse:
 def reset(game_id: str, req: ResetReq) -> ApiResponse:
     """重开游戏。"""
     link_repo.delete(game_id)
-    state = create_game(hand_index=req.handIndex, temp_limit=req.tempLimit)
+    state = create_game(
+        hand_index=req.handIndex,
+        temp_limit=req.tempLimit,
+        undo_unlimited=req.undoUnlimited,
+    )
     link_repo.create(state)
 
     log.info("link_reset oldGameId=%s newGameId=%s userId=%s", game_id, state["gameId"], req.userId)

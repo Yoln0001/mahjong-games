@@ -293,6 +293,18 @@ export default function Link() {
 
     const displayLimit = Math.max(state.tempLimit - 1, 1);
     const displayTempSlots = state.tempSlots.slice(0, displayLimit);
+    const isDarkStyle = themeStyle === "noir" || themeStyle === "arcade";
+    const linkTileFrameShadow = isDarkStyle
+        ? "0 0 0 2px rgba(255, 255, 255, 0.92), 0 2px 8px rgba(12, 17, 22, 0.12)"
+        : "0 0 0 2px rgba(0, 0, 0, 0.75), 0 2px 8px rgba(12, 17, 22, 0.12)";
+    const hoverHighlightBg =
+        themeStyle === "modern"
+            ? "rgba(59, 130, 246, 0.18)"
+            : themeStyle === "wafuu"
+                ? "rgba(239, 68, 68, 0.18)"
+                : themeStyle === "noir"
+                    ? "rgba(45, 212, 191, 0.22)"
+                    : "rgba(245, 158, 11, 0.22)";
 
     return (
         <div className="game-root">
@@ -338,12 +350,11 @@ export default function Link() {
                                 const disabled = !isTop || state.finish || loading || picking;
                                 const shouldHighlight = tileHintEnabled && !!hoverTile && tile === hoverTile;
                                 const highlightStyle = shouldHighlight
-                                    ? { background: "rgba(22, 119, 255, 0.16)" }
+                                    ? { background: hoverHighlightBg }
                                     : undefined;
                                 const borderStyle = tile
                                     ? {
-                                        boxShadow:
-                                            "0 0 0 2px rgba(0, 0, 0, 0.75), 0 2px 8px rgba(12, 17, 22, 0.12)",
+                                        boxShadow: linkTileFrameShadow,
                                     }
                                     : undefined;
 
@@ -406,14 +417,13 @@ export default function Link() {
                                             width: 44,
                                             height: 60,
                                         borderRadius: 10,
-                                        boxShadow:
-                                            "0 0 0 2px rgba(0, 0, 0, 0.75), 0 2px 8px rgba(12, 17, 22, 0.12)",
+                                        boxShadow: linkTileFrameShadow,
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "center",
                                         background:
                                             tileHintEnabled && hoverTile === t
-                                                ? "rgba(22, 119, 255, 0.16)"
+                                                ? hoverHighlightBg
                                                 : "#fff",
                                     }}
                                 >
@@ -430,7 +440,7 @@ export default function Link() {
                                             boxShadow: "none",
                                             borderRadius: 10,
                                             ...(tileHintEnabled && hoverTile === t
-                                                ? { background: "rgba(22, 119, 255, 0.16)" }
+                                                ? { background: hoverHighlightBg }
                                                 : undefined),
                                         }}
                                     />

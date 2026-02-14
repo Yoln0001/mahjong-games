@@ -626,7 +626,7 @@ export default function Handle() {
 
   const topText = buildTopText(hint);
 
-  const pickFrameColor = themeMode === "dark" ? "#ffffff" : "#000000";
+  const pickFrameColor = (themeStyle === "noir" || themeStyle === "arcade") ? "#ffffff" : "#000000";
   const cellRadius = 10;
 
   return (
@@ -698,7 +698,7 @@ export default function Handle() {
               onClick={() => onToggleStringInput(inputMode !== "text")}
             >
               <SettingOutlined style={{ marginRight: 6 }} />
-              {inputMode === "text" ? "手牌输入" : "字符串输入"}
+              {inputMode === "text" ? "手牌输入" : "文字输入"}
             </button>
           </Space>
         </div>

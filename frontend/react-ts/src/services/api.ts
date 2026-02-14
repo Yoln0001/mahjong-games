@@ -10,7 +10,7 @@ const baseURL = envBase || "";
 
 export const api = axios.create({
   baseURL,
-  timeout: 10000,
+  timeout: 30 * 1000,
 });
 
 api.interceptors.response.use(

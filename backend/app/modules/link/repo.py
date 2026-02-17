@@ -44,7 +44,7 @@ class InMemoryLinkRepo:
             self._store.pop(gid, None)
 
     def create(self, initial: dict) -> dict:
-        # link 的 game_id 你后面在 service/domain 里生成，这里先假设 initial 自带
+        # link 的 game_id 在 service/domain 生成，这里假设 initial 已包含
         self._gc()
         gid = initial["gameId"]
         self._store[gid] = (time.time(), initial)

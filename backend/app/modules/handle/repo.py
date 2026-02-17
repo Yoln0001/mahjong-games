@@ -284,7 +284,7 @@ class RedisGameRepo:
 
 def create_handle_repo_from_env() -> GameRepo:
     """
-    ✅ 保持函数名不变，避免你现有 deps.py import 失效。
+    ✅ 保持函数名不变，避免现有 deps.py import 失效。
     但内部默认 key 前缀已切到 handle 命名空间，并支持读取旧 game 命名空间数据。
     """
     repo_type = os.getenv("GAME_REPO", "memory").lower()

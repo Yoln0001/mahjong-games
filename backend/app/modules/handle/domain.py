@@ -58,35 +58,10 @@ def calc_score(*, g: int, t: float, win: bool) -> int:
     G = calc_G(float(t))
     score = 1500.0 * (0.9 * F + 0.1 * G) * (0.6 + 0.4 * (F * G)) * H
 
-    # 你写的是 int(...)，这里保持“向下取整”
+    # 使用 int(...) 以保持向下取整语义
     return int(score)
 
 
-# -------------------------
-# 与 handler.py 保持一致的映射与工具
-# -------------------------
-
-class TileAsciiMap(Enum):
-    """
-    中文麻将字符到英文麻将字符的映射表
-    """
-    万 = "m"
-    筒 = "p"
-    索 = "s"
-    东 = "1z"
-    南 = "2z"
-    西 = "3z"
-    北 = "4z"
-    白 = "5z"
-    发 = "6z"
-    中 = "7z"
-    萬 = "m"
-    東 = "1z"
-    發 = "6z"
-
-
-# 中文麻将字符表
-TileMap = ["万", "筒", "索", "东", "南", "西", "北", "白", "发", "中", "萬", "東", "發"]
 
 # 役种罗马音到中文的映射表
 YakuJapanese2ChineseMap = {
@@ -148,22 +123,6 @@ YakuJapanese2ChineseMap = {
 }
 
 
-def format_hand_msg(msg: str) -> str:
-    """
-    把输入中的中文牌名转换为 mpszh / 数字形式。
-    """
-    hand = ""
-    for w in msg:
-        if w in TileMap:
-            hand += TileAsciiMap[w].value
-        else:
-            hand += w
-
-    if len(hand) >= 3 and hand[:-2][-1].isdigit():
-        hand = hand[:-2] + hand[-1] + hand[-2:]
-    return hand
-
-
 def format_split_hand(hand_13: str) -> List[str]:
     """
     把 13 张（不含最后和牌）拆成 ['1m','2m',...] 形式。
@@ -184,6 +143,36 @@ def format_split_hand(hand_13: str) -> List[str]:
             result += "z".join(hand_13[split_start:index]) + "z"
             split_start = index + 1
     return [result[i * 2: i * 2 + 2] for i in range(int(len(result) / 2))]
+
+
+def expand_compact_hand_tiles(hand_text: str) -> List[str]:
+    """
+    将紧凑编码展开为逐张牌编码。
+
+    示例：
+    123m456p789s11555z -> ['1m','2m','3m',...,'5z','5z','5z']
+    """
+    digits = ""
+    tiles: List[str] = []
+
+    for ch in hand_text:
+        if ch.isdigit():
+            digits += ch
+            continue
+
+        if ch not in ("m", "p", "s", "z"):
+            raise ValueError("INVALID_CHAR")
+
+        if not digits:
+            raise ValueError("SUIT_WITHOUT_DIGIT")
+
+        tiles.extend([f"{d}{ch}" for d in digits])
+        digits = ""
+
+    if digits:
+        raise ValueError("TRAILING_DIGITS")
+
+    return tiles
 
 
 Color = Literal["blue", "orange", "gray"]
@@ -415,28 +404,38 @@ def evaluate_guess(
     if existed and progress.finished:
         return None, GuessErr(GuessErrorCode.GAME_FINISHED, "本局已结束，无法继续提交")
 
-    msg = (guess_str or "").strip().replace(" ", "")
-    if re.search(rf"[^\dmpszh{''.join(TileMap)}]", msg):
+    guess_text = (guess_str or "").strip().replace(" ", "")
+    # 仅允许数字 + m/p/s/z（不再支持中文牌名与 h 花色别名）
+    if re.search(r"[^0-9mpsz]", guess_text):
         return None, GuessErr(GuessErrorCode.FORMAT_ERROR, "输入包含非法字符", {"input": guess_str})
-    if len(msg) < 10:
+    if len(guess_text) < 10:
         return None, GuessErr(GuessErrorCode.FORMAT_ERROR, "输入过短，无法解析为手牌", {"input": guess_str})
 
-    msg_hand = format_hand_msg(msg)
-    msg_win_tile = msg_hand[-2:]
+    guess_hand = guess_text
 
     try:
-        msg_tiles_14 = TC.one_line_string_to_136_array(msg_hand)
+        guess_tiles_14_ascii = expand_compact_hand_tiles(guess_hand)
+    except ValueError:
+        return None, GuessErr(GuessErrorCode.FORMAT_ERROR, "解析失败，请检查输入格式", {"input": guess_str})
+
+    if len(guess_tiles_14_ascii) != 14:
+        return None, GuessErr(GuessErrorCode.COUNT_ERROR, "不是 14 张牌", {"count": len(guess_tiles_14_ascii)})
+
+    guess_win_tile = guess_tiles_14_ascii[-1]
+
+    try:
+        guess_tiles_14 = TC.one_line_string_to_136_array(guess_hand)
     except Exception as e:
         return None, GuessErr(GuessErrorCode.FORMAT_ERROR, "解析失败，请检查输入格式", {"error": str(e)})
 
-    if len(msg_tiles_14) != 14:
-        return None, GuessErr(GuessErrorCode.COUNT_ERROR, "不是 14 张牌", {"count": len(msg_tiles_14)})
+    if len(guess_tiles_14) != 14:
+        return None, GuessErr(GuessErrorCode.COUNT_ERROR, "不是 14 张牌", {"count": len(guess_tiles_14)})
 
     try:
-        win_tile_136 = TC.one_line_string_to_136_array(msg_win_tile)[0]
+        win_tile_136 = TC.one_line_string_to_136_array(guess_win_tile)[0]
         calculator = HandCalculator()
         res = calculator.estimate_hand_value(
-            msg_tiles_14,
+            guess_tiles_14,
             win_tile_136,
             config=_make_hand_config(
                 is_tsumo=game.hand.tsumo,
@@ -456,9 +455,6 @@ def evaluate_guess(
         game.users[user_id] = progress
 
     progress.hit_count_valid += 1
-
-    current_tiles_13 = format_split_hand(msg_hand[:-2])
-    guess_tiles_14_ascii = current_tiles_13 + [msg_win_tile]
 
     answer_tiles_14 = game.hand.tiles_ascii_13 + [game.hand.win_tile]
     colors = handle_colors(answer_tiles_14, guess_tiles_14_ascii)

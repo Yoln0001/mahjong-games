@@ -24,7 +24,7 @@ const MAX_ROWS = 6;
 const STORAGE_KEY = "mahjong-handle:lastGame:v2";
 
 type Row = { tiles: string[]; colors: CellStatus[] };
-type RuleMode = "normal" | "riichi";
+type RuleMode = "normal" | "riichi" | "guobiao";
 
 type PersistedState = {
   v: 2;
@@ -238,6 +238,7 @@ export default function Handle() {
     const restoredRows = rowsFromStatus(status);
 
     const statusAny = status as any;
+    const nextRuleMode = (statusAny?.ruleMode as RuleMode | undefined) ?? ruleMode;
 
     const gameCreatedAtNext =
       typeof statusAny?.createdAt === "number"
@@ -258,6 +259,7 @@ export default function Handle() {
     setGameId(statusAny.gameId || gameIdToLoad);
     setRows(restoredRows);
     setHint(statusAny.hint);
+    setRuleMode(nextRuleMode);
     setFinish(!!statusAny.finish);
     setWin(!!statusAny.win);
 
@@ -280,7 +282,7 @@ export default function Handle() {
       finish: !!statusAny.finish,
       win: !!statusAny.win,
       inputMode,
-      ruleMode,
+      ruleMode: nextRuleMode,
       gameCreatedAt: gameCreatedAtNext ?? undefined,
       lastGuessAt: lastGuessAtNext ?? undefined,
       hitCountValid: hitCountValidNext,
@@ -302,7 +304,8 @@ export default function Handle() {
     }
   }
 
-  async function startNewGame() {
+  async function startNewGame(nextRuleMode?: RuleMode) {
+    const modeToUse = nextRuleMode ?? ruleMode;
     try {
       setLoading(true);
 
@@ -319,7 +322,7 @@ export default function Handle() {
       setHitCountValid(0);
       setScore(null);
 
-      const res = await createGame({ userId });
+      const res = await createGame({ userId, ruleMode: modeToUse });
       const resAny = res as any;
 
       const newGameId = String(resAny.gameId || "");
@@ -340,7 +343,7 @@ export default function Handle() {
         finish: false,
         win: false,
         inputMode,
-        ruleMode,
+        ruleMode: modeToUse,
         gameCreatedAt: createdAt ?? undefined,
         lastGuessAt: undefined,
         hitCountValid: 0,
@@ -398,7 +401,7 @@ export default function Handle() {
 
   const clearTiles = useCallback(() => {
     setCurrentTiles([]);
-  }, []);
+  }, [ruleMode]);
 
   function applyGuessResult(res: GuessDataWithScore) {
     const resAny = res as any;
@@ -582,8 +585,8 @@ export default function Handle() {
 
   const onNewGame = useCallback(async () => {
     clearPersisted();
-    await startNewGame();
-  }, []);
+    await startNewGame(ruleMode);
+  }, [ruleMode]);
 
   function onToggleDarkMode(checked: boolean) {
     setThemeMode(checked ? "dark" : "light");
@@ -608,10 +611,16 @@ export default function Handle() {
     setRuleMode(next);
     persistSnapshot({ ruleMode: next });
 
-    await startNewGame();
+    await startNewGame(next);
 
     setModeOpen(false);
-    message.success(next === "normal" ? "已切换至：普通麻将" : "已切换至：立直麻将");
+    if (next === "normal") {
+      message.success("已切换至：普通麻将");
+    } else if (next === "riichi") {
+      message.success("已切换至：立直麻将");
+    } else {
+      message.success("已切换至：国标麻将");
+    }
   }, [ruleMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const boardRows: Row[] = useMemo(() => {
@@ -632,11 +641,11 @@ export default function Handle() {
   return (
     <div className="game-root">
       <div className="game-info">
-        {ruleMode === "riichi" ? (
+        {ruleMode === "riichi" || ruleMode === "guobiao" ? (
           <>
             <Typography.Text className="game-info-text">{topText}</Typography.Text>
             <div className="game-subinfo">
-              <div>{hint?.yakuTip ? `役种: ${hint.yakuTip}` : "\u00A0"}</div>
+              <div>{hint?.yakuTip ? `${ruleMode === "guobiao" ? "番种" : "役种"}: ${hint.yakuTip}` : "\u00A0"}</div>
               <div>{hint?.hanTip ? hint.hanTip : "\u00A0"}</div>
             </div>
           </>
@@ -876,6 +885,9 @@ export default function Handle() {
           </Button>
           <Button type={ruleMode === "riichi" ? "primary" : "default"} onClick={() => void onChangeRuleMode("riichi")}>
             立直麻将
+          </Button>
+          <Button type={ruleMode === "guobiao" ? "primary" : "default"} onClick={() => void onChangeRuleMode("guobiao")}>
+            国标麻将
           </Button>
         </Space>
       </Modal>

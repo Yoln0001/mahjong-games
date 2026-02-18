@@ -21,7 +21,7 @@ from typing import Dict, List, Optional, Tuple, Literal
 from mahjong.tile import TilesConverter as TC
 from mahjong.hand_calculating.hand import HandCalculator
 from mahjong.hand_calculating.hand_config import HandConfig
-
+from MahjongGB import MahjongFanCalculator
 
 # -------------------------
 # 计分规则（最终版）
@@ -176,6 +176,7 @@ def expand_compact_hand_tiles(hand_text: str) -> List[str]:
 
 
 Color = Literal["blue", "orange", "gray"]
+RuleMode = Literal["normal", "riichi", "guobiao"]
 
 
 def handle_colors(answer_tiles_14: List[str], guess_tiles_14: List[str]) -> List[Color]:
@@ -204,6 +205,69 @@ def handle_colors(answer_tiles_14: List[str], guess_tiles_14: List[str]) -> List
             colors[i] = "gray"
 
     return [c for c in colors if c is not None]  # type: ignore
+
+
+def _tile_to_gb_code(tile: str) -> str:
+    """将内部牌编码（如 1m/5z）转换为 PyMahjongGB 牌编码。"""
+    if len(tile) != 2 or not tile[0].isdigit():
+        raise ValueError("INVALID_TILE")
+    n = int(tile[0])
+    s = tile[1]
+    if s == "m":
+        if 1 <= n <= 9:
+            return f"W{n}"  # 万
+        raise ValueError("INVALID_TILE")
+    if s == "p":
+        if 1 <= n <= 9:
+            return f"B{n}"  # 筒
+        raise ValueError("INVALID_TILE")
+    if s == "s":
+        if 1 <= n <= 9:
+            return f"T{n}"  # 索
+        raise ValueError("INVALID_TILE")
+    if s == "z":
+        if 1 <= n <= 4:
+            return f"F{n}"  # 东南西北
+        if 5 <= n <= 7:
+            return f"J{n - 4}"  # 白发中
+        raise ValueError("INVALID_TILE")
+    raise ValueError("INVALID_TILE")
+
+
+def _calc_guobiao_fans(
+    *,
+    tiles_14_ascii: List[str],
+    tsumo: bool,
+    round_wind: int,
+    seat_wind: int,
+) -> Tuple[int, List[str]]:
+    """
+    使用 PyMahjongGB 计算国标番种。
+    返回：(总番数, 番种名列表)。
+    """
+    if MahjongFanCalculator is None:
+        raise RuntimeError("GUOBIAO_LIB_NOT_INSTALLED")
+    if len(tiles_14_ascii) != 14:
+        raise ValueError("COUNT_ERROR")
+
+    gb_tiles = tuple(_tile_to_gb_code(t) for t in tiles_14_ascii)
+    hand = gb_tiles[:-1]
+    win_tile = gb_tiles[-1]
+    fans = MahjongFanCalculator(
+        pack=(),
+        hand=hand,
+        winTile=win_tile,
+        flowerCount=0,
+        isSelfDrawn=bool(tsumo),
+        is4thTile=False,
+        isAboutKong=False,
+        isWallLast=False,
+        seatWind=max(0, int(seat_wind) - 1),
+        prevalentWind=max(0, int(round_wind) - 1),
+    )
+    total_fan = int(sum(int(item[0]) for item in fans))
+    fan_names = [str(item[1]) for item in fans]
+    return total_fan, fan_names
 
 
 # -------------------------
@@ -253,6 +317,7 @@ class GameState:
     game_id: str
     created_at: float
     max_guess: int
+    rule_mode: RuleMode
     hand: HandResultData
     users: Dict[str, UserProgress] = field(default_factory=dict)
 
@@ -304,7 +369,7 @@ def _make_hand_config(*, is_tsumo: bool, round_wind: int, seat_wind: int) -> Han
         return HandConfig(is_riichi=True, is_tsumo=is_tsumo)
 
 
-def get_hand(hand_index: Optional[int] = None) -> HandResultData:
+def get_hand(hand_index: Optional[int] = None, rule_mode: RuleMode = "normal") -> HandResultData:
     calculator = HandCalculator()
     hands_path = _ASSETS_DIR / "hands.txt"
     hand_list = linecache.getlines(hands_path.as_posix())
@@ -331,12 +396,39 @@ def get_hand(hand_index: Optional[int] = None) -> HandResultData:
 
     yaku = [x for x in result.yaku]
     yaku_jp = [YakuJapanese2ChineseMap.get(x.japanese, x.japanese) for x in yaku]
-    tip = "提示: " + " ".join(yaku_jp)
-
     han = int(result.han or 0)
     fu = int(result.fu or 0)
     cost = int(result.cost["main"] + result.cost["additional"])
     han_tip = f"{han}番{fu}符"
+    tip = "提示: " + " ".join(yaku_jp)
+
+    if rule_mode == "guobiao":
+        tiles_14_ascii = tiles_ascii_13 + [last_tile]
+        try:
+            gb_total_fan, gb_fans = _calc_guobiao_fans(
+                tiles_14_ascii=tiles_14_ascii,
+                tsumo=tsumo,
+                round_wind=round_wind,
+                seat_wind=seat_wind,
+            )
+            if gb_fans:
+                tip = "提示: " + " ".join(gb_fans)
+            else:
+                tip = "提示: "
+            han_tip = f"{gb_total_fan}番"
+            yaku_jp = gb_fans
+            han = gb_total_fan
+            fu = 0
+        except RuntimeError as e:
+            if str(e) == "GUOBIAO_LIB_NOT_INSTALLED":
+                tip = "提示: 国标番种库未安装"
+                han_tip = "0番"
+                yaku_jp = []
+                han = 0
+                fu = 0
+        except Exception:
+            # 题库与规则不完全匹配时，保留已有提示，避免无法开局
+            pass
 
     return HandResultData(
         tiles_ascii_13=tiles_ascii_13,
@@ -432,24 +524,35 @@ def evaluate_guess(
         return None, GuessErr(GuessErrorCode.COUNT_ERROR, "不是 14 张牌", {"count": len(guess_tiles_14)})
 
     try:
-        win_tile_136 = TC.one_line_string_to_136_array(guess_win_tile)[0]
-        calculator = HandCalculator()
-        res = calculator.estimate_hand_value(
-            guess_tiles_14,
-            win_tile_136,
-            config=_make_hand_config(
-                is_tsumo=game.hand.tsumo,
+        if game.rule_mode == "guobiao":
+            gb_total_fan, _ = _calc_guobiao_fans(
+                tiles_14_ascii=guess_tiles_14_ascii,
+                tsumo=game.hand.tsumo,
                 round_wind=game.hand.round_wind,
                 seat_wind=game.hand.seat_wind,
-            ),
-        )
+            )
+            if gb_total_fan <= 0:
+                return None, GuessErr(GuessErrorCode.NO_YAKU, "手牌无番")
+        else:
+            win_tile_136 = TC.one_line_string_to_136_array(guess_win_tile)[0]
+            calculator = HandCalculator()
+            res = calculator.estimate_hand_value(
+                guess_tiles_14,
+                win_tile_136,
+                config=_make_hand_config(
+                    is_tsumo=game.hand.tsumo,
+                    round_wind=game.hand.round_wind,
+                    seat_wind=game.hand.seat_wind,
+                ),
+            )
+            if res.han is None:
+                return None, GuessErr(GuessErrorCode.NOT_WINNING_HAND, "不符合规范和牌型")
+            if int(res.han) == 0:
+                return None, GuessErr(GuessErrorCode.NO_YAKU, "手牌无役")
     except Exception as e:
+        if str(e) == "GUOBIAO_LIB_NOT_INSTALLED":
+            return None, GuessErr(GuessErrorCode.FORMAT_ERROR, "国标番种库未安装")
         return None, GuessErr(GuessErrorCode.FORMAT_ERROR, "算番失败，请检查输入是否为合法牌组", {"error": str(e)})
-
-    if res.han is None:
-        return None, GuessErr(GuessErrorCode.NOT_WINNING_HAND, "不符合规范和牌型")
-    if int(res.han) == 0:
-        return None, GuessErr(GuessErrorCode.NO_YAKU, "手牌无役")
 
     if not existed:
         game.users[user_id] = progress
@@ -489,12 +592,13 @@ def evaluate_guess(
     ), None
 
 
-def new_game(*, hand_index: Optional[int] = None, max_guess: int = 6) -> GameState:
-    hand = get_hand(hand_index=hand_index)
+def new_game(*, hand_index: Optional[int] = None, max_guess: int = 6, rule_mode: RuleMode = "normal") -> GameState:
+    hand = get_hand(hand_index=hand_index, rule_mode=rule_mode)
     return GameState(
         game_id=uuid.uuid4().hex,
         created_at=time.time(),
         max_guess=max_guess,
+        rule_mode=rule_mode,
         hand=hand,
         users={},
     )

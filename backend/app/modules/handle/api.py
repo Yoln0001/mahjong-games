@@ -109,7 +109,7 @@ def _ensure_user(game, user_id: str) -> bool:
 # ✅ 改动：去掉 /game 前缀，由 app/api/router.py 统一加 prefix="/game"
 @router.post("/start", response_model=ApiResponse)
 def start_game(req: StartReq) -> ApiResponse:
-    g = handle_repo.create(hand_index=req.handIndex, max_guess=req.maxGuess)
+    g = handle_repo.create(hand_index=req.handIndex, max_guess=req.maxGuess, rule_mode=req.ruleMode)
 
     _ensure_user(g, req.userId)
     handle_repo.save(g)
@@ -122,6 +122,7 @@ def start_game(req: StartReq) -> ApiResponse:
             "gameId": g.game_id,
             "maxGuess": g.max_guess,
             "createdAt": g.created_at,
+            "ruleMode": g.rule_mode,
             "hint": _build_hint(
                 tip=g.hand.tip,
                 han_tip=g.hand.han_tip,
@@ -204,6 +205,7 @@ def status(game_id: str, userId: str) -> ApiResponse:
                 "gameId": g.game_id,
                 "maxGuess": g.max_guess,
                 "createdAt": g.created_at,
+                "ruleMode": g.rule_mode,
                 "hitCountValid": 0,
                 "remain": g.max_guess,
                 "finish": False,
@@ -229,6 +231,7 @@ def status(game_id: str, userId: str) -> ApiResponse:
             "gameId": g.game_id,
             "maxGuess": g.max_guess,
             "createdAt": g.created_at,
+            "ruleMode": g.rule_mode,
             "hitCountValid": p.hit_count_valid,
             "remain": max(g.max_guess - p.hit_count_valid, 0),
             "finish": p.finished,
@@ -268,10 +271,13 @@ def answer(game_id: str, userId: str) -> ApiResponse:
 @router.post("/{game_id}/reset", response_model=ApiResponse)
 def reset(game_id: str, req: ResetReq) -> ApiResponse:
     handle_repo.delete(game_id)
-    g = handle_repo.create(hand_index=req.handIndex, max_guess=req.maxGuess)
+    g = handle_repo.create(hand_index=req.handIndex, max_guess=req.maxGuess, rule_mode=req.ruleMode)
 
     handle_repo.update(g.game_id, lambda game: _ensure_user(game, req.userId))
 
     log.info("game_reset oldGameId=%s newGameId=%s userId=%s", game_id, g.game_id, req.userId)
 
-    return ApiResponse(ok=True, data={"gameId": g.game_id, "maxGuess": g.max_guess, "createdAt": g.created_at})
+    return ApiResponse(
+        ok=True,
+        data={"gameId": g.game_id, "maxGuess": g.max_guess, "createdAt": g.created_at, "ruleMode": g.rule_mode},
+    )

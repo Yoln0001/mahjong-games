@@ -5,7 +5,7 @@
 # @Project : mahjong-handle-web
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Literal
 
 from pydantic import BaseModel, Field
 
@@ -26,6 +26,7 @@ class StartReq(BaseModel):
     userId: str = Field(..., min_length=1)
     maxGuess: int = Field(6, ge=1, le=20)
     handIndex: Optional[int] = None
+    ruleMode: Literal["normal", "riichi", "guobiao"] = "normal"
 
 
 class GuessReq(BaseModel):
@@ -37,3 +38,4 @@ class ResetReq(BaseModel):
     userId: str = Field(..., min_length=1)
     handIndex: Optional[int] = None
     maxGuess: int = Field(6, ge=1, le=20)
+    ruleMode: Literal["normal", "riichi", "guobiao"] = "normal"

@@ -26,6 +26,7 @@ export interface StartGameData {
     gameId: string;
     maxGuess: number;
     createdAt: string;
+    ruleMode?: "normal" | "riichi" | "guobiao";
     hint?: Hint;
 }
 
@@ -56,6 +57,7 @@ export interface GameHistoryEntry {
 export interface GameStatusData {
     gameId: string;
     maxGuess: number;
+    ruleMode?: "normal" | "riichi" | "guobiao";
     hitCountValid: number;
     remain: number;
     finish: boolean;
@@ -74,6 +76,7 @@ export interface StartReq {
     userId: string;
     handIndex?: number;
     maxGuess?: number;
+    ruleMode?: "normal" | "riichi" | "guobiao";
 }
 
 export interface GuessReq {
@@ -85,6 +88,7 @@ export interface ResetReq {
     userId: string;
     handIndex?: number;
     maxGuess?: number;
+    ruleMode?: "normal" | "riichi" | "guobiao";
 }
 
 export interface HealthResponse {

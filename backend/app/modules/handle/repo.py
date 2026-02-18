@@ -19,6 +19,7 @@ from app.modules.handle.domain import (
     HandResultData,
     GuessEntry,
     UserProgress,
+    RuleMode,
     new_game,
 )
 
@@ -65,6 +66,9 @@ def game_from_dict(d: dict) -> GameState:
     game_id = d.get("game_id") or d.get("gameId") or ""
     created_at = float(d.get("created_at", d.get("createdAt", time.time())))
     max_guess = int(d.get("max_guess", d.get("maxGuess", 8)))
+    rule_mode = d.get("rule_mode", d.get("ruleMode", "normal"))
+    if rule_mode not in ("normal", "riichi", "guobiao"):
+        rule_mode = "normal"
 
     hand = _build_hand(d.get("hand"))
 
@@ -100,6 +104,7 @@ def game_from_dict(d: dict) -> GameState:
         game_id=game_id,
         created_at=created_at,
         max_guess=max_guess,
+        rule_mode=rule_mode,  # type: ignore[arg-type]
         hand=hand,
         users=users,
     )
@@ -110,7 +115,7 @@ def game_from_dict(d: dict) -> GameState:
 # -------------------------
 
 class GameRepo(Protocol):
-    def create(self, *, hand_index: int | None = None, max_guess: int = 8) -> GameState: ...
+    def create(self, *, hand_index: int | None = None, max_guess: int = 8, rule_mode: RuleMode = "normal") -> GameState: ...
     def get(self, game_id: str) -> Optional[GameState]: ...
     def save(self, game: GameState) -> None: ...
     def delete(self, game_id: str) -> None: ...
@@ -139,9 +144,9 @@ class InMemoryGameRepo:
         for gid in expired:
             self._games.pop(gid, None)
 
-    def create(self, *, hand_index: int | None = None, max_guess: int = 8) -> GameState:
+    def create(self, *, hand_index: int | None = None, max_guess: int = 8, rule_mode: RuleMode = "normal") -> GameState:
         self._gc()
-        g = new_game(hand_index=hand_index, max_guess=max_guess)
+        g = new_game(hand_index=hand_index, max_guess=max_guess, rule_mode=rule_mode)
         self._games[g.game_id] = g
         return g
 
@@ -196,8 +201,8 @@ class RedisGameRepo:
     def _all_prefixes(self) -> List[str]:
         return [self._prefix] + self._fallback_prefixes
 
-    def create(self, *, hand_index: int | None = None, max_guess: int = 8) -> GameState:
-        g = new_game(hand_index=hand_index, max_guess=max_guess)
+    def create(self, *, hand_index: int | None = None, max_guess: int = 8, rule_mode: RuleMode = "normal") -> GameState:
+        g = new_game(hand_index=hand_index, max_guess=max_guess, rule_mode=rule_mode)
         self.save(g)
         return g
 

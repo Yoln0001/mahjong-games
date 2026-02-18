@@ -238,7 +238,7 @@ export default function Link() {
         }
     }, [applyState, gameId, loading, picking, state.canUndo, state.finish, state.tempSlots.length, userId]);
 
-    // 辅助功能：是否允许无限撤回
+    // 辅助功能：是否允许连续撤回
     const onToggleUndoUnlimited = useCallback(
         async (checked: boolean) => {
             if (!gameId) return;
@@ -488,7 +488,7 @@ export default function Link() {
                     </div>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                         <div>
-                            <div style={{ fontWeight: 600 }}>无限撤回</div>
+                            <div style={{ fontWeight: 600 }}>连续撤回</div>
                             <div style={{ opacity: 0.72, fontSize: 13, marginTop: 4 }}>
                                 关闭时每步最多撤回一次，开启后可连续撤回
                             </div>

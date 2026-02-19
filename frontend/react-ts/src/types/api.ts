@@ -210,3 +210,77 @@ export interface LinkResetData {
     gameId: string;
     createdAt: number;
 }
+
+// ----------------------------
+// Battle (双人对战) API types
+// ----------------------------
+
+export type BattleMode = "normal" | "riichi" | "guobiao";
+
+export interface BattleCreateReq {
+    userId: string;
+    mode: BattleMode;
+    questionCount: number;
+    maxGuess?: number;
+}
+
+export interface BattleJoinReq {
+    userId: string;
+}
+
+export interface BattleSubmitReq {
+    userId: string;
+    guess: string;
+}
+
+export interface BattlePlayerStatus {
+    userId: string;
+    currentQuestion: number;
+    totalScore: number;
+    finished: boolean;
+    questionScores: number[];
+}
+
+export interface BattleStatusData {
+    matchId: string;
+    status: "waiting" | "playing" | "finished";
+    mode: BattleMode;
+    questionCount: number;
+    maxGuess: number;
+    my: BattlePlayerStatus;
+    opponent: BattlePlayerStatus | null;
+}
+
+export interface BattleCreateData extends BattleStatusData {
+    shareUrl: string;
+}
+
+export interface BattleSubmitData {
+    questionIndex: number;
+    questionFinished: boolean;
+    totalScore: number;
+    finish: boolean;
+    guess: {
+        guessTiles14: string[];
+        colors14: TileColor[];
+        remain: number;
+        finish: boolean;
+        win: boolean;
+        createdAt: number;
+        score?: number;
+    };
+}
+
+export interface BattleResultData {
+    matchId: string;
+    mode: BattleMode;
+    questionCount: number;
+    winnerUserId: string | null;
+    isDraw: boolean;
+    players: Array<{
+        userId: string;
+        totalScore: number;
+        finishedAt?: number | null;
+        questionScores: number[];
+    }>;
+}

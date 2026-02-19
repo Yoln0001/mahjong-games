@@ -7,11 +7,12 @@ import { SkinOutlined } from "@ant-design/icons";
 import ModeSelect from "./pages/ModeSelect";
 import Handle from "./pages/Handle";
 import Link from "./pages/Link";
+import Battle from "./pages/Battle";
 import StyleWafuu from "./pages/StyleWafuu";
 import StyleModern from "./pages/StyleModern";
 import StyleArcade from "./pages/StyleArcade";
 import StyleNoir from "./pages/StyleNoir";
-import { ThemeMode } from "./constants/tiles";
+import type { ThemeMode } from "./constants/tiles";
 
 type ThemeModeCtx = {
   themeMode: ThemeMode;
@@ -125,6 +126,8 @@ export default function App() {
             <Route path="/" element={<ModeSelect />} />
             <Route path="/handle/:gameId" element={<Handle />} />
             <Route path="/link/:gameId" element={<Link />} />
+            <Route path="/battle" element={<Battle />} />
+            <Route path="/battle/:matchId" element={<Battle />} />
             <Route path="/style/wafuu" element={<StyleWafuu />} />
             <Route path="/style/modern" element={<StyleModern />} />
             <Route path="/style/arcade" element={<StyleArcade />} />

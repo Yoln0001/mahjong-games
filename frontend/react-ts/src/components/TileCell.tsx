@@ -1,6 +1,6 @@
 ﻿import React from "react";
 import TileView from "./TileView";
-import { ThemeMode } from "../constants/tiles";
+import type { ThemeMode } from "../constants/tiles";
 
 export type CellStatus = "blue" | "orange" | "gray" | "empty";
 

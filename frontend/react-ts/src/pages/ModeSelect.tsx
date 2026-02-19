@@ -12,6 +12,7 @@ export default function ModeSelect() {
   const defaultUserId = useMemo(() => getOrCreateUserId(), []);
   const [creatingHandle, setCreatingHandle] = useState(false);
   const [creatingLink, setCreatingLink] = useState(false);
+  const [creatingBattle, setCreatingBattle] = useState(false);
   const isDarkTheme = themeStyle === "noir" || themeStyle === "arcade";
   const handleImg = isDarkTheme ? "/picture/猜手牌dark.png" : "/picture/猜手牌light.png";
   const linkImg = isDarkTheme ? "/picture/连连看dark.png" : "/picture/连连看light.png";
@@ -70,6 +71,16 @@ export default function ModeSelect() {
     }
   }
 
+  function onCreateBattle() {
+    try {
+      setCreatingBattle(true);
+      const uid = normalizeUserId(defaultUserId) ?? defaultUserId;
+      navigate(`/battle?userId=${encodeURIComponent(uid)}`);
+    } finally {
+      setCreatingBattle(false);
+    }
+  }
+
   return (
     <div className="mode-root">
       <div className="mode-hero">
@@ -115,6 +126,26 @@ export default function ModeSelect() {
           </button>
 
         </div>
+
+        <div className="mode-card">
+          <button
+            type="button"
+            className="mode-card-main"
+            onClick={onCreateBattle}
+            disabled={creatingBattle}
+            aria-label="进入猜手牌双人对战"
+          >
+            <div className="mode-card-top">
+              <img
+                className="mode-card-image"
+                src={handleImg}
+                alt="猜手牌双人对战"
+              />
+              <div className="mode-card-title">猜手牌双人对战</div>
+            </div>
+          </button>
+        </div>
+
       </div>
     </div>
   );

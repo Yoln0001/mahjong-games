@@ -13,8 +13,9 @@ import {
 } from "@ant-design/icons";
 
 import { useThemeMode, useThemeStyle } from "../App";
-import TileCell, { CellStatus } from "../components/TileCell";
-import { TileId } from "../constants/tiles";
+import TileCell from "../components/TileCell";
+import type { CellStatus } from "../components/TileCell";
+import type { TileId } from "../constants/tiles";
 import { createGame, submitGuess, getState, getAnswer } from "../services/handleApi.ts";
 import type { GuessData, Hint, TileColor, GameStatusData } from "../types/api";
 import { getOrCreateUserId, normalizeUserId } from "../utils/userId";

@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
-import { normalizeToTileId, ThemeMode, tileIdToSvgUrl, tileIdToUnicode, TileId } from "../constants/tiles";
+import { normalizeToTileId, tileIdToSvgUrl, tileIdToUnicode } from "../constants/tiles";
+import type { ThemeMode, TileId } from "../constants/tiles";
 import { useThemeStyle } from "../App";
 
 export type TileRenderMode = "svg" | "unicode"; // 将来你换 PNG/Canvas 也可在这里扩展

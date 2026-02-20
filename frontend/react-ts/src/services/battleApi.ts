@@ -52,6 +52,14 @@ export async function joinBattle(matchId: string, payload: BattleJoinReq): Promi
     return assertApiOk(resp.data);
 }
 
+export async function enterBattle(matchId: string, payload: BattleJoinReq): Promise<BattleStatusData> {
+    const resp = await api.post<ApiResponse<BattleStatusData>>(
+        buildUrl(`/${encodeURIComponent(matchId)}/enter`),
+        payload
+    );
+    return assertApiOk(resp.data);
+}
+
 export async function getBattleStatus(matchId: string, userId: string): Promise<BattleStatusData> {
     const resp = await api.get<ApiResponse<BattleStatusData>>(
         buildUrl(`/${encodeURIComponent(matchId)}/status`),

@@ -579,6 +579,52 @@ html, body {
     cursor: pointer;
 }
 
+.modern-btn.compact {
+    height: 34px;
+    min-width: 96px;
+    padding: 0 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.battle-page {
+    text-align: center;
+}
+
+.battle-page .game-info,
+.battle-page .modern-panel,
+.battle-page .input-area,
+.battle-page .keyboard-actions {
+    text-align: center;
+}
+
+.battle-page .game-subinfo {
+    align-items: center;
+}
+
+.battle-page .battle-join-row {
+    width: 380px;
+    max-width: 100%;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.battle-page .battle-join-row .ant-input,
+.battle-page .battle-join-row .modern-input {
+    border-radius: 8px;
+    text-align: center;
+}
+
+.battle-page .ant-input-number-input {
+    text-align: center;
+}
+
 .modern-btn.primary {
     background: #0d6efd;
     color: #fff;

@@ -109,6 +109,7 @@ export default function Link() {
     const [tileHintEnabled, setTileHintEnabled] = useState(true);
     const [endOpen, setEndOpen] = useState(false);
     const [endDurationSec, setEndDurationSec] = useState<number>(0);
+    const [nowSec, setNowSec] = useState<number>(() => Date.now() / 1000);
 
     const lastFinishRef = useRef<boolean>(false);
 
@@ -169,6 +170,13 @@ export default function Link() {
             setHoverTile(null);
         }
     }, [tileHintEnabled]);
+
+    useEffect(() => {
+        const timer = window.setInterval(() => {
+            setNowSec(Date.now() / 1000);
+        }, 1000);
+        return () => window.clearInterval(timer);
+    }, []);
 
     // 开始新局
     const onStartNew = useCallback(async () => {
@@ -305,6 +313,9 @@ export default function Link() {
                 : themeStyle === "noir"
                     ? "rgba(45, 212, 191, 0.22)"
                     : "rgba(245, 158, 11, 0.22)";
+    const currentDurationSec = state.finish
+        ? endDurationSec
+        : (state.createdAt ? Math.max(0, Math.floor(nowSec - state.createdAt)) : 0);
 
     return (
         <div className="game-root">
@@ -313,9 +324,6 @@ export default function Link() {
                     <div className="modern-actions center">
                         <button className="modern-btn primary" type="button" onClick={onStartNew} disabled={loading}>
                             新开一局
-                        </button>
-                        <button className="modern-btn" type="button" onClick={() => navigate("/", { replace: false })}>
-                            返回主页
                         </button>
                     </div>
                 </div>
@@ -337,6 +345,9 @@ export default function Link() {
                         <RollbackOutlined style={{ marginRight: 6 }} />
                         撤回
                     </button>
+                </div>
+                <div className="modern-actions center" style={{ marginTop: 8 }}>
+                    <span>当前用时：{formatDurationMMSS(currentDurationSec)}</span>
                 </div>
 
                 <div className="modern-grid">

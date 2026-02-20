@@ -239,6 +239,8 @@ export interface BattlePlayerStatus {
     totalScore: number;
     finished: boolean;
     questionScores: number[];
+    currentHint?: Hint;
+    currentGameCreatedAt?: number | null;
 }
 
 export interface BattleStatusData {
@@ -268,6 +270,7 @@ export interface BattleSubmitData {
         win: boolean;
         createdAt: number;
         score?: number;
+        hint?: Hint;
     };
 }
 

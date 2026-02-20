@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from app.api.deps import battle_repo, log
 from app.modules.battle.domain import (
     create_battle,
+    enter_battle,
     join_battle,
     submit_guess,
     to_result_payload,
@@ -14,6 +15,7 @@ from app.modules.battle.schemas import (
     ApiError,
     ApiResponse,
     CreateBattleReq,
+    EnterBattleReq,
     JoinBattleReq,
     SubmitBattleReq,
 )
@@ -57,6 +59,20 @@ def join(match_id: str, req: JoinBattleReq) -> ApiResponse:
         return ApiResponse(ok=False, data=None, error=ApiError(code=code, message=code))
 
     log.info("battle_join matchId=%s userId=%s", match_id, req.userId)
+    return ApiResponse(ok=True, data=to_status_payload(result, req.userId), error=None)
+
+
+@router.post("/{match_id}/enter", response_model=ApiResponse)
+def enter(match_id: str, req: EnterBattleReq) -> ApiResponse:
+    try:
+        result = battle_repo.update(match_id, lambda s: enter_battle(s, req.userId))
+    except KeyError:
+        return ApiResponse(ok=False, data=None, error=ApiError(code="MATCH_NOT_FOUND", message="matchId 不存在"))
+    except ValueError as e:
+        code = str(e)
+        return ApiResponse(ok=False, data=None, error=ApiError(code=code, message=code))
+
+    log.info("battle_enter matchId=%s userId=%s", match_id, req.userId)
     return ApiResponse(ok=True, data=to_status_payload(result, req.userId), error=None)
 
 

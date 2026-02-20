@@ -174,6 +174,7 @@ export default function Handle() {
   const [score, setScore] = useState<number | null>(
     typeof (persisted0 as any)?.score === "number" ? ((persisted0 as any).score as number) : null
   );
+  const [nowSec, setNowSec] = useState<number>(() => Date.now() / 1000);
 
   const [infoOpen, setInfoOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -638,6 +639,16 @@ export default function Handle() {
 
   const pickFrameColor = (themeStyle === "noir" || themeStyle === "arcade") ? "#ffffff" : "#000000";
   const cellRadius = 10;
+  const currentDurationSec = finish
+    ? computeDurationSec(gameCreatedAt, lastGuessAt)
+    : (gameCreatedAt == null ? 0 : Math.max(0, Math.floor(nowSec - gameCreatedAt)));
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNowSec(Date.now() / 1000);
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   return (
     <div className="game-root">
@@ -665,15 +676,11 @@ export default function Handle() {
             <button className="modern-btn primary" type="button" onClick={onNewGame} disabled={loading || submitting}>
               新开一局
             </button>
-            <button
-              className="modern-btn"
-              type="button"
-              onClick={() => navigate("/", { replace: false })}
-              disabled={loading || submitting}
-            >
-              返回主页
-            </button>
           </Space>
+        </div>
+
+        <div style={{ marginTop: 10 }}>
+          当前用时：{formatDurationMMSS(currentDurationSec)}
         </div>
 
         <div style={{ marginTop: 10 }}>
@@ -911,6 +918,7 @@ export default function Handle() {
           <div className={`mh-end-modal-content theme-${themeStyle}`} style={{ lineHeight: 1.9 }}>
             <div>合法猜测次数：<b>{endSummaryPayload.hitCountValid}</b></div>
             <div>游戏用时：<b>{formatDurationMMSS(endSummaryPayload.durationSec)}</b></div>
+            <div>得分：<b>{typeof endSummaryPayload.score === "number" ? endSummaryPayload.score : 0}</b></div>
 
             {!endSummaryPayload.win &&
               Array.isArray(endSummaryPayload.answerTiles14) &&

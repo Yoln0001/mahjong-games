@@ -1,8 +1,8 @@
 ﻿import React, { createContext, useMemo, useState, useContext, useEffect } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { ConfigProvider, theme as antdTheme, Modal, Space, Button } from "antd";
 import type { ThemeConfig } from "antd";
-import { SkinOutlined } from "@ant-design/icons";
+import { HomeOutlined, SkinOutlined } from "@ant-design/icons";
 
 import ModeSelect from "./pages/ModeSelect";
 import Handle from "./pages/Handle";
@@ -86,9 +86,15 @@ function saveThemeStyle(themeStyle: ThemeStyle) {
 }
 
 export default function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => loadThemeMode());
   const [themeStyle, setThemeStyle] = useState<ThemeStyle>(() => loadThemeStyle());
   const [styleOpen, setStyleOpen] = useState(false);
+  const showHomeInHeader =
+    location.pathname.startsWith("/handle") ||
+    location.pathname.startsWith("/link") ||
+    location.pathname.startsWith("/battle");
 
   useEffect(() => {
     saveThemeMode(themeMode);
@@ -115,6 +121,11 @@ export default function App() {
               <div className="site-name">逻辑推理</div>
             </div>
             <div className="site-actions">
+              {showHomeInHeader && (
+                <button className="icon-btn" type="button" aria-label="Back Home" onClick={() => navigate("/", { replace: false })}>
+                  <HomeOutlined />
+                </button>
+              )}
               <button className="icon-btn" type="button" aria-label="Theme Switch" onClick={() => setStyleOpen(true)}>
                 <SkinOutlined />
               </button>

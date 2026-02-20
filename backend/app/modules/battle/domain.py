@@ -12,6 +12,58 @@ from app.modules.handle.repo import game_from_dict, game_to_dict
 ModeType = str
 
 _HANDLE_HANDS_PATH = Path(__file__).resolve().parent.parent / "handle" / "assets" / "hands.txt"
+_WIND_MAP = {1: "东", 2: "南", 3: "西", 4: "北"}
+
+
+def _wind_tip(round_wind: int, seat_wind: int) -> str:
+    seat = _WIND_MAP.get(seat_wind, "未知")
+    rnd = _WIND_MAP.get(round_wind, "未知")
+    return f"自风：{seat}，场风：{rnd}"
+
+
+def _is_tsumo_text(is_tsumo: bool) -> str:
+    return "自摸" if is_tsumo else "荣和"
+
+
+def _strip_tip_prefix(tip: str) -> str:
+    if not tip:
+        return ""
+    return tip[3:] if tip.startswith("役种：") else tip
+
+
+def _build_hint(*, tip: str, han_tip: str, round_wind: int, seat_wind: int, tsumo: bool) -> Dict[str, str]:
+    return {
+        "yakuTip": _strip_tip_prefix(tip),
+        "hanTip": han_tip or "",
+        "windTip": _wind_tip(round_wind, seat_wind),
+        "isTsumo": _is_tsumo_text(tsumo),
+    }
+
+
+def _hint_from_game(game: Any) -> Dict[str, str]:
+    hand = getattr(game, "hand", None)
+    if hand is None:
+        return {"yakuTip": "", "hanTip": "", "windTip": "", "isTsumo": ""}
+    return _build_hint(
+        tip=getattr(hand, "tip", "") or "",
+        han_tip=getattr(hand, "han_tip", "") or "",
+        round_wind=int(getattr(hand, "round_wind", 1)),
+        seat_wind=int(getattr(hand, "seat_wind", 1)),
+        tsumo=bool(getattr(hand, "tsumo", False)),
+    )
+
+
+def _current_game_created_at(progress: Dict[str, Any]) -> Optional[float]:
+    current_game = progress.get("currentGame")
+    if not isinstance(current_game, dict):
+        return None
+    raw = current_game.get("created_at", current_game.get("createdAt"))
+    if raw is None:
+        return None
+    try:
+        return float(raw)
+    except Exception:
+        return None
 
 
 def _load_hands_count() -> int:
@@ -40,6 +92,7 @@ def _new_player_progress(*, mode: ModeType, hand_index: int, max_guess: int) -> 
         "questionScores": [],
         "totalScore": 0,
         "currentGame": game_to_dict(game),
+        "currentHint": _hint_from_game(game),
     }
 
 
@@ -154,6 +207,7 @@ def submit_guess(state: Dict[str, Any], user_id: str, guess: str) -> Dict[str, A
             progress["finished"] = True
             progress["finishedAt"] = time.time()
             progress["currentGame"] = None
+            progress["currentHint"] = None
         else:
             next_hand_index = state["questionHandIndices"][next_question]
             next_game = new_game(
@@ -162,6 +216,15 @@ def submit_guess(state: Dict[str, Any], user_id: str, guess: str) -> Dict[str, A
                 rule_mode=state["mode"],  # type: ignore[arg-type]
             )
             progress["currentGame"] = game_to_dict(next_game)
+            progress["currentHint"] = _hint_from_game(next_game)
+    else:
+        progress["currentHint"] = _build_hint(
+            tip=ok.tip,
+            han_tip=ok.han_tip,
+            round_wind=int(getattr(game.hand, "round_wind", 1)),
+            seat_wind=int(getattr(game.hand, "seat_wind", 1)),
+            tsumo=bool(getattr(game.hand, "tsumo", False)),
+        )
 
     _refresh_match_status(state)
 
@@ -178,8 +241,47 @@ def submit_guess(state: Dict[str, Any], user_id: str, guess: str) -> Dict[str, A
             "win": ok.win,
             "createdAt": ok.created_at,
             "score": ok.score,
+            "hint": progress.get("currentHint"),
         },
     }
+
+
+def enter_battle(state: Dict[str, Any], user_id: str) -> Dict[str, Any]:
+    players = state.get("players", {})
+    if user_id not in players:
+        raise ValueError("USER_NOT_IN_MATCH")
+
+    progress = players[user_id]
+    if progress.get("finished"):
+        return state
+
+    current_question = int(progress.get("currentQuestion", 0))
+    question_count = int(state.get("questionCount", 0))
+    if current_question >= question_count:
+        return state
+
+    current_game_dict = progress.get("currentGame")
+    if not current_game_dict:
+        return state
+
+    game = game_from_dict(current_game_dict)
+    game_users = getattr(game, "users", {}) or {}
+    user_progress = game_users.get(user_id)
+    hit_count_valid = int(getattr(user_progress, "hit_count_valid", 0) or 0) if user_progress else 0
+
+    # Only reset the first-question timer when the player has not submitted any valid guess yet.
+    if current_question == 0 and hit_count_valid == 0:
+        hand_index = state["questionHandIndices"][0]
+        next_game = new_game(
+            hand_index=hand_index,
+            max_guess=int(state.get("maxGuess", 6)),
+            rule_mode=state.get("mode", "normal"),  # type: ignore[arg-type]
+        )
+        progress["currentGame"] = game_to_dict(next_game)
+        progress["currentHint"] = _hint_from_game(next_game)
+
+    progress["enteredAt"] = time.time()
+    return state
 
 
 def to_status_payload(state: Dict[str, Any], user_id: str) -> Dict[str, Any]:
@@ -190,6 +292,8 @@ def to_status_payload(state: Dict[str, Any], user_id: str) -> Dict[str, Any]:
 
     opp_id = next((pid for pid in players.keys() if pid != user_id), None)
     opp = players.get(opp_id) if opp_id else None
+    me_created_at = _current_game_created_at(me)
+    opp_created_at = _current_game_created_at(opp or {})
 
     return {
         "matchId": state["matchId"],
@@ -203,6 +307,8 @@ def to_status_payload(state: Dict[str, Any], user_id: str) -> Dict[str, Any]:
             "totalScore": int(me.get("totalScore", 0)),
             "finished": bool(me.get("finished", False)),
             "questionScores": me.get("questionScores", []),
+            "currentHint": me.get("currentHint"),
+            "currentGameCreatedAt": me_created_at,
         },
         "opponent": {
             "userId": opp_id,
@@ -210,6 +316,8 @@ def to_status_payload(state: Dict[str, Any], user_id: str) -> Dict[str, Any]:
             "totalScore": int((opp or {}).get("totalScore", 0)),
             "finished": bool((opp or {}).get("finished", False)),
             "questionScores": (opp or {}).get("questionScores", []),
+            "currentHint": (opp or {}).get("currentHint"),
+            "currentGameCreatedAt": opp_created_at,
         } if opp_id else None,
     }
 

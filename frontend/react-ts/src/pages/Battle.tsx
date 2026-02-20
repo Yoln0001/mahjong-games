@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Input, InputNumber, Modal, Select, Space, Typography, message } from "antd";
+import type { InputRef } from "antd";
 import {
     InfoCircleOutlined,
     RetweetOutlined,
@@ -9,9 +10,10 @@ import {
     RollbackOutlined,
     DeleteOutlined,
     CheckOutlined,
+    CopyOutlined,
 } from "@ant-design/icons";
-import type { BattleCreateReq, BattleMode, BattleResultData, BattleStatusData } from "../types/api";
-import { createBattle, getBattleResult, getBattleStatus, joinBattle, submitBattleGuess } from "../services/battleApi";
+import type { BattleCreateReq, BattleMode, BattleResultData, BattleStatusData, Hint } from "../types/api";
+import { createBattle, enterBattle, getBattleResult, getBattleStatus, joinBattle, submitBattleGuess } from "../services/battleApi";
 import { getOrCreateUserId, normalizeUserId } from "../utils/userId";
 import TileCell from "../components/TileCell";
 import type { TileId } from "../constants/tiles";
@@ -54,6 +56,26 @@ function progressText(currentQuestion: number | undefined, questionCount: number
     return `${Math.min(current + 1, total)}/${total}`;
 }
 
+function buildTopText(hint?: Hint): string {
+    const wind = hint?.windTip?.trim();
+    const tsumo = hint?.isTsumo?.trim();
+    if (wind && tsumo) return `${wind} / ${tsumo}`;
+    if (wind) return wind;
+    if (tsumo) return tsumo;
+    return " ";
+}
+
+function pad2(n: number): string {
+    return String(Math.max(0, Math.floor(n))).padStart(2, "0");
+}
+
+function formatDurationMMSS(seconds: number): string {
+    const s = Math.max(0, Math.floor(seconds || 0));
+    const mm = Math.floor(s / 60);
+    const ss = s % 60;
+    return `${pad2(mm)}:${pad2(ss)}`;
+}
+
 export default function Battle() {
     const { themeMode } = useThemeMode();
     const { themeStyle } = useThemeStyle();
@@ -83,12 +105,22 @@ export default function Battle() {
     const [roundSummaryOpen, setRoundSummaryOpen] = useState(false);
     const [roundSummary, setRoundSummary] = useState<RoundSummary | null>(null);
     const [awaitingNextQuestion, setAwaitingNextQuestion] = useState(false);
+    const [createSummaryOpen, setCreateSummaryOpen] = useState(false);
+    const [pendingEnterPath, setPendingEnterPath] = useState("");
+    const textInputRef = useRef<InputRef>(null);
+    const [nowSec, setNowSec] = useState<number>(() => Date.now() / 1000);
 
     const matchId = routeMatchId || statusData?.matchId || "";
     const maxRows = statusData?.maxGuess ?? maxGuess;
     const myFinished = !!statusData?.my?.finished;
     const questionTotal = statusData?.questionCount ?? questionCount;
     const disableInputActions = submitBusy || myFinished || awaitingNextQuestion;
+    const currentHint = statusData?.my?.currentHint;
+    const topText = buildTopText(currentHint);
+    const currentDurationSec =
+        statusData?.my?.currentGameCreatedAt && !statusData?.my?.finished
+            ? Math.max(0, Math.floor(nowSec - statusData.my.currentGameCreatedAt))
+            : 0;
 
     const refreshStatus = useCallback(async () => {
         if (!matchId) return;
@@ -145,10 +177,10 @@ export default function Battle() {
             const res = await createBattle(payload);
             setStatusData(res);
             const nextPath = `/battle/${encodeURIComponent(res.matchId)}?userId=${encodeURIComponent(userId)}`;
-            navigate(nextPath, { replace: false });
             const absolute = res.shareUrl || `${window.location.origin}${nextPath}`;
             setShareUrl(absolute);
-            message.success("对战已创建，分享链接给对手即可");
+            setPendingEnterPath(nextPath);
+            setCreateSummaryOpen(true);
         } catch (e: any) {
             message.error(e?.message || "创建对战失败");
         } finally {
@@ -225,6 +257,9 @@ export default function Battle() {
             message.error(e?.message || "提交失败");
         } finally {
             setSubmitBusy(false);
+            if (inputMode === "text") {
+                setTimeout(() => textInputRef.current?.focus(), 0);
+            }
         }
     }
 
@@ -297,17 +332,22 @@ export default function Battle() {
         setShareUrl(`${window.location.origin}/battle/${encodeURIComponent(matchId)}`);
     }, [matchId, shareUrl]);
 
-    return (
-        <div className="game-root">
-            <div className="modern-shell">
-                <div className="modern-top">
-                    <div className="modern-actions center">
-                        <button className="modern-btn" type="button" onClick={() => navigate("/", { replace: false })}>
-                            返回主页
-                        </button>
-                    </div>
-                </div>
+    useEffect(() => {
+        const timer = window.setInterval(() => {
+            setNowSec(Date.now() / 1000);
+        }, 1000);
+        return () => window.clearInterval(timer);
+    }, []);
 
+    useEffect(() => {
+        if (inputMode !== "text") return;
+        if (disableInputActions) return;
+        setTimeout(() => textInputRef.current?.focus(), 0);
+    }, [inputMode, disableInputActions]);
+
+    return (
+        <div className="game-root battle-page">
+            <div className="modern-shell">
                 {!matchId && (
                     <div className="modern-panel">
                         <h3>创建双人对战</h3>
@@ -339,28 +379,47 @@ export default function Battle() {
                         </Space>
                         <hr style={{ margin: "14px 0", opacity: 0.2 }} />
                         <h3>加入对战</h3>
-                        <Space.Compact style={{ width: "100%" }}>
+                        <div className="battle-join-row">
                             <Input
-                                placeholder="输入 matchId"
+                                placeholder="输入匹配ID"
                                 value={joinMatchIdInput}
                                 onChange={(e) => setJoinMatchIdInput(e.target.value)}
+                                className="modern-input"
+                                style={{ height: 34, width: 280 }}
                             />
-                            <button className="modern-btn" type="button" onClick={onJoinByInput}>
+                            <button className="modern-btn compact" type="button" onClick={onJoinByInput}>
                                 进入
                             </button>
-                        </Space.Compact>
+                        </div>
                     </div>
                 )}
 
                 {matchId && (
                     <>
                         <div className="game-info">
-                            <Typography.Text className="game-info-text">
-                                对战模式：{modeText((statusData?.mode as BattleMode) || mode)}
-                            </Typography.Text>
-                            <div className="game-subinfo">
+                            {(statusData?.mode === "riichi" || statusData?.mode === "guobiao") ? (
+                                <>
+                                    <Typography.Text className="game-info-text">{topText}</Typography.Text>
+                                    <div className="game-subinfo">
+                                        <div>{currentHint?.yakuTip ? `${statusData?.mode === "guobiao" ? "番种" : "役种"}: ${currentHint.yakuTip}` : "\u00A0"}</div>
+                                        <div>{currentHint?.hanTip || "\u00A0"}</div>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <Typography.Text className="game-info-text">
+                                        对战模式：{modeText((statusData?.mode as BattleMode) || mode)}
+                                    </Typography.Text>
+                                    <div className="game-subinfo">
+                                        <div>{"\u00A0"}</div>
+                                        <div>{"\u00A0"}</div>
+                                    </div>
+                                </>
+                            )}
+                            <div style={{ marginTop: 10 }}>
                                 <div>当前题目：{progressText(statusData?.my.currentQuestion, questionTotal, statusData?.my.finished)}</div>
                                 <div>总分：我方 {statusData?.my.totalScore ?? 0} / 对方 {statusData?.opponent?.totalScore ?? 0}</div>
+                                <div>当前用时：{formatDurationMMSS(currentDurationSec)}</div>
                             </div>
                             <div style={{ marginTop: 10 }}>
                                 <Space wrap>
@@ -490,6 +549,7 @@ export default function Battle() {
                                     ) : (
                                         <div className="text-input-bar">
                                             <Input
+                                                ref={textInputRef}
                                                 value={guessInput}
                                                 onChange={(e) => setGuessInput(e.target.value)}
                                                 placeholder="输入14张牌字符串，例如：123m456p789s11555z"
@@ -525,6 +585,81 @@ export default function Battle() {
             </div>
 
             <Modal
+                title="对局已创建"
+                open={createSummaryOpen}
+                onCancel={() => {
+                    setCreateSummaryOpen(false);
+                    if (pendingEnterPath) {
+                        void (async () => {
+                            try {
+                                if (statusData?.matchId) {
+                                    await enterBattle(statusData.matchId, { userId });
+                                }
+                            } catch {
+                                // ignore enter failure and continue navigation
+                            } finally {
+                                navigate(pendingEnterPath, { replace: false });
+                                setPendingEnterPath("");
+                            }
+                        })();
+                    }
+                }}
+                footer={
+                    <div style={{ display: "flex", justifyContent: "center" }}>
+                        <button
+                            className="modern-btn primary"
+                            type="button"
+                            onClick={() => {
+                                setCreateSummaryOpen(false);
+                                if (pendingEnterPath) {
+                                    void (async () => {
+                                        try {
+                                            if (statusData?.matchId) {
+                                                await enterBattle(statusData.matchId, { userId });
+                                            }
+                                        } catch {
+                                            // ignore enter failure and continue navigation
+                                        } finally {
+                                            navigate(pendingEnterPath, { replace: false });
+                                            setPendingEnterPath("");
+                                        }
+                                    })();
+                                }
+                            }}
+                        >
+                            进入对局
+                        </button>
+                    </div>
+                }
+                className={`theme-modal theme-${themeStyle}`}
+            >
+                <div style={{ lineHeight: 1.9 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span>匹配ID：{statusData?.matchId ?? "-"}</span>
+                        <button
+                            className="modern-btn"
+                            type="button"
+                            onClick={async () => {
+                                const id = statusData?.matchId ?? "";
+                                if (!id) return;
+                                try {
+                                    await navigator.clipboard.writeText(id);
+                                    message.success("已复制匹配ID");
+                                } catch {
+                                    message.error("复制失败");
+                                }
+                            }}
+                        >
+                            <CopyOutlined style={{ marginRight: 6 }} />
+                            复制
+                        </button>
+                    </div>
+                    <div>模式：{modeText((statusData?.mode as BattleMode) || mode)}</div>
+                    <div>题目数量：{statusData?.questionCount ?? questionCount}</div>
+                </div>
+            </Modal>
+
+            <Modal
                 title="双人对战规则"
                 open={ruleOpen}
                 onCancel={() => setRuleOpen(false)}
@@ -547,11 +682,28 @@ export default function Battle() {
                 className={`theme-modal theme-${themeStyle}`}
             >
                 <div style={{ lineHeight: 1.8, wordBreak: "break-all" }}>
-                    <div>匹配ID：{matchId}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span>匹配ID：{matchId}</span>
+                        <button
+                            className="modern-btn compact"
+                            type="button"
+                            onClick={async () => {
+                                if (!matchId) return;
+                                try {
+                                    await navigator.clipboard.writeText(matchId);
+                                    message.success("已复制匹配ID");
+                                } catch {
+                                    message.error("复制失败");
+                                }
+                            }}
+                        >
+                            <CopyOutlined style={{ marginRight: 6 }} />
+                            复制
+                        </button>
+                    </div>
                     <div>模式：{modeText((statusData?.mode as BattleMode) || mode)}</div>
                     <div>题目数量：{statusData?.questionCount ?? "-"}</div>
                     <div>状态：{matchStatusText(statusData?.status)}</div>
-                    <div>分享链接：{shareUrl || (matchId ? `${window.location.origin}/battle/${encodeURIComponent(matchId)}` : "-")}</div>
                     <div>我方进度：{progressText(statusData?.my.currentQuestion, statusData?.questionCount, statusData?.my.finished)}</div>
                     <div>我方得分：{statusData?.my.totalScore ?? 0}</div>
                     <div>对方进度：{progressText(statusData?.opponent?.currentQuestion, statusData?.questionCount, statusData?.opponent?.finished)}</div>

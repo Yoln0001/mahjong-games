@@ -28,6 +28,10 @@ class JoinBattleReq(BaseModel):
     userId: str = Field(..., min_length=1)
 
 
+class EnterBattleReq(BaseModel):
+    userId: str = Field(..., min_length=1)
+
+
 class SubmitBattleReq(BaseModel):
     userId: str = Field(..., min_length=1)
     guess: str = Field(..., min_length=1)

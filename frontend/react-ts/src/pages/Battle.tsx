@@ -21,6 +21,7 @@ import { useThemeMode, useThemeStyle } from "../App";
 import type { CellStatus } from "../components/TileCell";
 
 const BATTLE_COLS = 14;
+const BATTLE_STORAGE_KEY = "mahjong-battle:lastMatch:v1";
 const TILE_KEYBOARD: TileId[] = [
     "1m", "2m", "3m", "4m", "5m", "6m", "7m", "8m", "9m",
     "1p", "2p", "3p", "4p", "5p", "6p", "7p", "8p", "9p",
@@ -109,6 +110,7 @@ export default function Battle() {
     const [pendingEnterPath, setPendingEnterPath] = useState("");
     const textInputRef = useRef<InputRef>(null);
     const [nowSec, setNowSec] = useState<number>(() => Date.now() / 1000);
+    const [resumeMatchId, setResumeMatchId] = useState<string>("");
 
     const matchId = routeMatchId || statusData?.matchId || "";
     const maxRows = statusData?.maxGuess ?? maxGuess;
@@ -157,6 +159,29 @@ export default function Battle() {
     }, [routeMatchId, refreshStatus, userId]);
 
     useEffect(() => {
+        if (matchId) return;
+        try {
+            const raw = localStorage.getItem(BATTLE_STORAGE_KEY);
+            if (!raw) {
+                setResumeMatchId("");
+                return;
+            }
+            const saved = JSON.parse(raw) as { matchId?: string; userId?: string };
+            if (!saved?.matchId || !saved?.userId) {
+                setResumeMatchId("");
+                return;
+            }
+            if (normalizeUserId(saved.userId) !== userId) {
+                setResumeMatchId("");
+                return;
+            }
+            setResumeMatchId(saved.matchId);
+        } catch {
+            setResumeMatchId("");
+        }
+    }, [matchId, userId]);
+
+    useEffect(() => {
         if (!matchId) return;
         const timer = setInterval(() => {
             void refreshStatus();
@@ -164,6 +189,22 @@ export default function Battle() {
         }, 2000);
         return () => clearInterval(timer);
     }, [matchId, refreshResult, refreshStatus]);
+
+    useEffect(() => {
+        if (!matchId) return;
+        try {
+            localStorage.setItem(
+                BATTLE_STORAGE_KEY,
+                JSON.stringify({
+                    matchId,
+                    userId,
+                    updatedAt: Date.now(),
+                })
+            );
+        } catch {
+            // ignore
+        }
+    }, [matchId, userId]);
 
     async function onCreateBattle() {
         try {
@@ -191,10 +232,30 @@ export default function Battle() {
     async function onJoinByInput() {
         const mid = (joinMatchIdInput || "").trim();
         if (!mid) {
-            message.warning("请输入 matchId");
+            message.warning("请输入匹配ID");
             return;
         }
         navigate(`/battle/${encodeURIComponent(mid)}?userId=${encodeURIComponent(userId)}`, { replace: false });
+    }
+
+    async function onResumeBattle() {
+        const mid = (resumeMatchId || "").trim();
+        if (!mid) {
+            message.warning("没有可返回的对局");
+            return;
+        }
+        try {
+            await getBattleStatus(mid, userId);
+            navigate(`/battle/${encodeURIComponent(mid)}?userId=${encodeURIComponent(userId)}`, { replace: false });
+        } catch {
+            try {
+                localStorage.removeItem(BATTLE_STORAGE_KEY);
+            } catch {
+                // ignore
+            }
+            setResumeMatchId("");
+            message.error("该对局不可用，请重新创建或加入");
+        }
     }
 
     const pushTile = useCallback((tile: string) => {
@@ -367,11 +428,11 @@ export default function Battle() {
                             </div>
                             <div>
                                 <div>题目数量</div>
-                                <InputNumber min={1} max={50} value={questionCount} onChange={(v) => setQuestionCount(Number(v || 1))} />
+                                <InputNumber min={1} max={5} value={questionCount} onChange={(v) => setQuestionCount(Number(v || 1))} />
                             </div>
                             <div>
                                 <div>每题最大猜测次数</div>
-                                <InputNumber min={1} max={20} value={maxGuess} onChange={(v) => setMaxGuess(Number(v || 6))} />
+                                <InputNumber min={6} max={8} value={maxGuess} onChange={(v) => setMaxGuess(Number(v || 6))} />
                             </div>
                             <button className="modern-btn primary" type="button" onClick={onCreateBattle} disabled={loading}>
                                 创建对战
@@ -391,6 +452,13 @@ export default function Battle() {
                                 进入
                             </button>
                         </div>
+                        {resumeMatchId && (
+                            <div style={{ marginTop: 10 }}>
+                                <button className="modern-btn" type="button" onClick={() => void onResumeBattle()}>
+                                    返回对局
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
 

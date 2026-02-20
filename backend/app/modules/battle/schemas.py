@@ -20,8 +20,8 @@ class ApiResponse(BaseModel):
 class CreateBattleReq(BaseModel):
     userId: str = Field(..., min_length=1)
     mode: Literal["normal", "riichi", "guobiao"] = "normal"
-    questionCount: int = Field(5, ge=1, le=50)
-    maxGuess: int = Field(6, ge=1, le=20)
+    questionCount: int = Field(1, ge=1, le=5)
+    maxGuess: int = Field(6, ge=6, le=8)
 
 
 class JoinBattleReq(BaseModel):

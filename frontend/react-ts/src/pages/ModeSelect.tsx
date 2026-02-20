@@ -16,6 +16,7 @@ export default function ModeSelect() {
   const isDarkTheme = themeStyle === "noir" || themeStyle === "arcade";
   const handleImg = isDarkTheme ? "/picture/猜手牌dark.png" : "/picture/猜手牌light.png";
   const linkImg = isDarkTheme ? "/picture/连连看dark.png" : "/picture/连连看light.png";
+  const battleImg = isDarkTheme ? "/picture/双人猜手牌dark.png" : "/picture/双人猜手牌light.png";
 
   async function onCreateHandle() {
     try {
@@ -138,7 +139,7 @@ export default function ModeSelect() {
             <div className="mode-card-top">
               <img
                 className="mode-card-image"
-                src={handleImg}
+                src={battleImg}
                 alt="猜手牌双人对战"
               />
               <div className="mode-card-title">猜手牌双人对战</div>

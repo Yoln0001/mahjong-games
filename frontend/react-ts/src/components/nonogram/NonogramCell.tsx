@@ -7,10 +7,9 @@ type Props = {
   majorColumn: boolean;
   majorRow: boolean;
   onDrawStart: (row: number, column: number, mode: DrawMode) => void;
-  onDrawEnter: (row: number, column: number) => void;
 };
 
-export default function NonogramCell({ row, column, state, majorColumn, majorRow, onDrawStart, onDrawEnter }: Props) {
+export default function NonogramCell({ row, column, state, majorColumn, majorRow, onDrawStart }: Props) {
   return (
     <button
       className={`nonogram-cell is-${state}${majorColumn ? " is-major-column" : ""}${majorRow ? " is-major-row" : ""}`}
@@ -18,13 +17,11 @@ export default function NonogramCell({ row, column, state, majorColumn, majorRow
       data-row={row}
       data-column={column}
       aria-label={`第 ${row + 1} 行，第 ${column + 1} 列：${state}`}
-      onPointerDown={(event) => {
-        onDrawStart(row, column, event.button === 2 ? "marked" : "filled");
+      onClick={() => onDrawStart(row, column, "filled")}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        onDrawStart(row, column, "marked");
       }}
-      onPointerEnter={(event) => {
-        if (event.buttons) onDrawEnter(row, column);
-      }}
-      onContextMenu={(event) => event.preventDefault()}
     >
       {state === "marked" ? <span aria-hidden="true">×</span> : null}
     </button>

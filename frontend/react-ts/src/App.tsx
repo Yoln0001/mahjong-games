@@ -1,6 +1,6 @@
 ﻿import React, { createContext, useMemo, useState, useContext, useEffect } from "react";
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
-import { ConfigProvider, theme as antdTheme, Modal, Space, Button } from "antd";
+import { ConfigProvider, theme as antdTheme, Modal, Space } from "antd";
 import type { ThemeConfig } from "antd";
 import { HomeOutlined, SkinOutlined } from "@ant-design/icons";
 
@@ -12,6 +12,8 @@ import StyleWafuu from "./pages/StyleWafuu";
 import StyleModern from "./pages/StyleModern";
 import StyleArcade from "./pages/StyleArcade";
 import StyleNoir from "./pages/StyleNoir";
+import Nonogram from "./pages/Nonogram";
+import NonogramBattle from "./pages/NonogramBattle";
 import type { ThemeMode } from "./constants/tiles";
 
 type ThemeModeCtx = {
@@ -94,7 +96,8 @@ export default function App() {
   const showHomeInHeader =
     location.pathname.startsWith("/handle") ||
     location.pathname.startsWith("/link") ||
-    location.pathname.startsWith("/battle");
+    location.pathname.startsWith("/battle") ||
+    location.pathname.startsWith("/nonogram");
 
   useEffect(() => {
     saveThemeMode(themeMode);
@@ -139,6 +142,9 @@ export default function App() {
             <Route path="/link/:gameId" element={<Link />} />
             <Route path="/battle" element={<Battle />} />
             <Route path="/battle/:matchId" element={<Battle />} />
+            <Route path="/nonogram" element={<Nonogram />} />
+            <Route path="/nonogram/battle" element={<NonogramBattle />} />
+            <Route path="/nonogram/battle/:matchId" element={<NonogramBattle />} />
             <Route path="/style/wafuu" element={<StyleWafuu />} />
             <Route path="/style/modern" element={<StyleModern />} />
             <Route path="/style/arcade" element={<StyleArcade />} />
@@ -176,7 +182,7 @@ export default function App() {
           closable={false}
           className={`theme-modal theme-${themeStyle}`}
           >
-          <Space direction="vertical" style={{ width: "100%" }}>
+          <Space orientation="vertical" style={{ width: "100%" }}>
             <button
               className={`modern-btn primary theme-option ${themeStyle === "modern" ? "active" : ""}`}
               type="button"

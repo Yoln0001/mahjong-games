@@ -10,6 +10,7 @@ from fastapi import APIRouter
 from app.modules.handle.api import router as handle_router
 from app.modules.link.api import router as link_router
 from app.modules.battle.api import router as battle_router
+from app.modules.nonogram_battle.api import router as nonogram_battle_router
 from .health import router as health_router
 
 router = APIRouter()
@@ -18,3 +19,4 @@ router.include_router(health_router, prefix="/health", tags=["health"])
 router.include_router(handle_router, prefix="/handle", tags=["handle"])
 router.include_router(link_router, prefix="/link", tags=["link"])
 router.include_router(battle_router, prefix="/battle", tags=["battle"])
+router.include_router(nonogram_battle_router, prefix="/nonogram-battle", tags=["nonogram-battle"])

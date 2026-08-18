@@ -14,9 +14,7 @@ export default function ModeSelect() {
   const [creatingLink, setCreatingLink] = useState(false);
   const [creatingBattle, setCreatingBattle] = useState(false);
   const isDarkTheme = themeStyle === "noir" || themeStyle === "arcade";
-  const handleImg = isDarkTheme ? "/picture/猜手牌dark.png" : "/picture/猜手牌light.png";
-  const linkImg = isDarkTheme ? "/picture/连连看dark.png" : "/picture/连连看light.png";
-  const battleImg = isDarkTheme ? "/picture/双人猜手牌dark.png" : "/picture/双人猜手牌light.png";
+  const tileBase = `/tiles/${isDarkTheme ? "dark" : "light"}`;
 
   async function onCreateHandle() {
     try {
@@ -82,6 +80,10 @@ export default function ModeSelect() {
     }
   }
 
+  function onCreateNonogram() {
+    navigate("/nonogram");
+  }
+
   return (
     <div className="mode-root">
       <div className="mode-hero">
@@ -97,11 +99,14 @@ export default function ModeSelect() {
             aria-label="进入猜手牌"
           >
             <div className="mode-card-top">
-              <img
-                className="mode-card-image"
-                src={handleImg}
-                alt="猜手牌"
-              />
+              <div className="mode-game-preview mode-guess-preview" aria-hidden="true">
+                <div className="mode-tile-fan">
+                  {[["Man1.svg", "fan-1"], ["Pin3.svg", "fan-2"], ["Sou7.svg", "fan-3"], ["Chun.svg", "fan-4"], ["Haku.svg", "fan-5"]].map(([tile, className]) => (
+                    <img key={tile} className={`mode-mahjong-tile ${className}`} src={`${tileBase}/${tile}`} alt="" />
+                  ))}
+                </div>
+                <span className="mode-question-badge">?</span>
+              </div>
               <div className="mode-card-title">猜手牌</div>
             </div>
           </button>
@@ -117,11 +122,16 @@ export default function ModeSelect() {
             aria-label="进入连连看"
           >
             <div className="mode-card-top">
-              <img
-                className="mode-card-image"
-                src={linkImg}
-                alt="连连看"
-              />
+              <div className="mode-game-preview mode-link-preview" aria-hidden="true">
+                <div className="mode-link-route route-a" />
+                <div className="mode-link-route route-b" />
+                <span className="mode-link-dot dot-a" />
+                <span className="mode-link-dot dot-b" />
+                <img className="mode-mahjong-tile link-tile-a" src={`${tileBase}/Pin5.svg`} alt="" />
+                <img className="mode-mahjong-tile link-tile-b" src={`${tileBase}/Pin5.svg`} alt="" />
+                <img className="mode-mahjong-tile link-tile-c" src={`${tileBase}/Sou3.svg`} alt="" />
+                <img className="mode-mahjong-tile link-tile-d" src={`${tileBase}/Sou3.svg`} alt="" />
+              </div>
               <div className="mode-card-title">连连看</div>
             </div>
           </button>
@@ -137,12 +147,34 @@ export default function ModeSelect() {
             aria-label="进入猜手牌双人对战"
           >
             <div className="mode-card-top">
-              <img
-                className="mode-card-image"
-                src={battleImg}
-                alt="猜手牌双人对战"
-              />
+              <div className="mode-game-preview mode-battle-preview" aria-hidden="true">
+                <div className="mode-battle-hand hand-left">
+                  {["Man3.svg", "Pin7.svg", "Sou5.svg"].map((tile) => <img key={tile} className="mode-mahjong-tile" src={`${tileBase}/${tile}`} alt="" />)}
+                </div>
+                <span className="mode-vs-badge">VS</span>
+                <div className="mode-battle-hand hand-right">
+                  {["Chun.svg", "Pin2.svg", "Sou9.svg"].map((tile) => <img key={tile} className="mode-mahjong-tile" src={`${tileBase}/${tile}`} alt="" />)}
+                </div>
+              </div>
               <div className="mode-card-title">猜手牌双人对战</div>
+            </div>
+          </button>
+        </div>
+
+        <div className="mode-card">
+          <button
+            type="button"
+            className="mode-card-main"
+            onClick={onCreateNonogram}
+            aria-label="进入数织"
+          >
+            <div className="mode-card-top">
+              <div className="mode-nonogram-preview" aria-hidden="true">
+                {Array.from({ length: 36 }, (_, index) => (
+                  <span key={index} className={[7, 8, 10, 13, 15, 16, 19, 20, 22, 25, 26, 28].includes(index) ? "filled" : ""} />
+                ))}
+              </div>
+              <div className="mode-card-title">数织</div>
             </div>
           </button>
         </div>

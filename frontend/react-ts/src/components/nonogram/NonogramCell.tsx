@@ -19,7 +19,6 @@ export default function NonogramCell({ row, column, state, majorColumn, majorRow
       data-column={column}
       aria-label={`第 ${row + 1} 行，第 ${column + 1} 列：${state}`}
       onPointerDown={(event) => {
-        event.preventDefault();
         onDrawStart(row, column, event.button === 2 ? "marked" : "filled");
       }}
       onPointerEnter={(event) => {

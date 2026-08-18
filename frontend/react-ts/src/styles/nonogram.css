@@ -1,0 +1,100 @@
+.nonogram-page {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 30px 0 44px;
+  color: var(--ng-text, #253238);
+}
+
+.nonogram-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 18px; }
+.nonogram-heading h1 { margin: 0; font-size: clamp(30px, 5vw, 48px); line-height: 1; }
+.nonogram-heading p { margin: 8px 0 0; color: #69777c; }
+.nonogram-eyebrow { font-size: 11px; letter-spacing: .22em; font-weight: 800; color: #36917d !important; }
+.nonogram-meta { display: flex; align-items: center; gap: 14px; padding: 10px 14px; border-radius: 12px; background: rgba(54,145,125,.1); }
+.nonogram-meta strong { font-variant-numeric: tabular-nums; font-size: 20px; }
+.nonogram-battle-entry { border: 1px solid #287e6c; background: transparent; color: #287e6c; font-weight: 750; }
+
+.nonogram-size-panel { display: flex; align-items: center; gap: 10px; padding: 12px 14px; margin-bottom: 22px; border: 1px solid rgba(37,50,56,.12); border-radius: 14px; background: rgba(255,255,255,.72); }
+.nonogram-size-panel label { font-weight: 700; }
+.nonogram-size-panel input { width: 64px; padding: 8px; border: 1px solid #b9c5c7; border-radius: 8px; background: white; color: #253238; font: inherit; text-align: center; }
+.nonogram-size-panel button, .nonogram-new-btn, .nonogram-result button:first-of-type { border: 0; background: #287e6c; color: white; font-weight: 700; box-shadow: 0 5px 14px rgba(40,126,108,.22); }
+.nonogram-size-panel button { margin-left: auto; }
+
+.nonogram-play-area { display: grid; justify-items: center; gap: 20px; padding: clamp(14px, 3vw, 28px); border: 1px solid rgba(37,50,56,.1); border-radius: 20px; background: rgba(255,255,255,.76); box-shadow: 0 18px 48px rgba(31,53,58,.08); overflow-x: auto; }
+.nonogram-board-wrap { --cell: clamp(25px, calc(68vw / var(--nonogram-size)), 44px); display: grid; grid-template-columns: calc(var(--row-clues) * 24px + 12px) auto; grid-template-rows: calc(var(--column-clues) * 22px + 10px) auto; user-select: none; touch-action: none; }
+.nonogram-corner { border-right: 2px solid #536164; border-bottom: 2px solid #536164; }
+.nonogram-column-clues { display: grid; grid-template-columns: repeat(var(--nonogram-size), var(--cell)); border-bottom: 2px solid #536164; }
+.nonogram-row-clues { display: grid; grid-template-rows: repeat(var(--nonogram-size), var(--cell)); border-right: 2px solid #536164; }
+.nonogram-clues { display: flex; align-items: center; justify-content: flex-end; gap: 5px; color: #344448; font-weight: 750; font-size: clamp(11px, 1.5vw, 15px); font-variant-numeric: tabular-nums; }
+.nonogram-clues-row { padding: 0 8px; }
+.nonogram-clues-column { flex-direction: column; justify-content: flex-end; padding-bottom: 6px; gap: 0; }
+.nonogram-grid { display: grid; grid-template-columns: repeat(var(--nonogram-size), var(--cell)); grid-template-rows: repeat(var(--nonogram-size), var(--cell)); border-right: 2px solid #536164; border-bottom: 2px solid #536164; }
+.nonogram-cell { width: var(--cell); height: var(--cell); min-width: 0; padding: 0; display: grid; place-items: center; border: 0; border-left: 1px solid #9aa8aa; border-top: 1px solid #9aa8aa; border-radius: 0; background: #f7f5ed; color: #839092; font: 700 calc(var(--cell) * .64)/1 sans-serif; transition: background .08s, transform .08s; }
+.nonogram-cell.is-major-column { border-left-width: 2px; border-left-color: #536164; }
+.nonogram-cell.is-major-row { border-top-width: 2px; border-top-color: #536164; }
+.nonogram-cell.is-filled { background: #27383b; }
+.nonogram-cell.is-marked { background: #f7f5ed; }
+.nonogram-cell:hover { border-color: #36917d; transform: scale(.94); }
+
+.nonogram-toolbar { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.nonogram-mode-switch { display: flex; padding: 3px; border-radius: 12px; background: #e6eceb; }
+.nonogram-mode-switch button { display: flex; align-items: center; gap: 7px; border: 0; background: transparent; color: #536164; }
+.nonogram-mode-switch button.active { background: white; color: #1f6557; box-shadow: 0 3px 9px rgba(31,53,58,.1); }
+.mode-symbol { width: 16px; height: 16px; display: inline-grid; place-items: center; }
+.mode-symbol.filled { background: #27383b; border-radius: 3px; }
+.mode-symbol.marked { font-size: 22px; }
+.nonogram-subtle-btn { background: transparent; color: #536164; border: 1px solid #b8c3c4; }
+.nonogram-help { margin: -5px 0 0; color: #758286; font-size: 13px; text-align: center; }
+
+.nonogram-result { display: grid; justify-items: center; gap: 10px; padding: 18px; text-align: center; }
+.nonogram-result-icon { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 50%; background: #dff3eb; color: #287e6c; font-size: 30px; font-weight: 900; }
+.nonogram-result h2, .nonogram-result p { margin: 0; }
+.nonogram-result button { width: 100%; }
+.nonogram-result .result-close { background: transparent; color: #667579; }
+
+.nonogram-battle-lobby { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.nonogram-lobby-card { position: relative; min-height: 270px; padding: 28px; display: flex; flex-direction: column; border: 1px solid rgba(37,50,56,.1); border-radius: 20px; background: rgba(255,255,255,.78); box-shadow: 0 18px 48px rgba(31,53,58,.08); overflow: hidden; }
+.nonogram-lobby-card h2 { margin: 28px 0 3px; font-size: 24px; }
+.nonogram-lobby-card p { margin: 0 0 24px; color: #758286; }
+.nonogram-lobby-card > button { margin-top: auto; border: 0; background: #287e6c; color: white; font-weight: 750; }
+.lobby-number { position: absolute; right: 22px; top: 14px; color: rgba(40,126,108,.13); font-size: 70px; font-weight: 900; line-height: 1; }
+.lobby-controls { display: flex; align-items: center; gap: 10px; }
+.lobby-controls input { width: 76px; padding: 10px; border: 1px solid #b9c5c7; border-radius: 9px; background: white; color: #253238; font: inherit; }
+.lobby-controls input.room-input { width: 100%; text-transform: lowercase; }
+.nonogram-loading, .nonogram-waiting { min-height: 420px; display: grid; place-items: center; align-content: center; text-align: center; }
+.nonogram-loading h2, .nonogram-loading p { margin: 5px; }
+.nonogram-loading p { color: #758286; }
+.nonogram-loading button { margin-top: 14px; border: 0; background: #287e6c; color: white; font-weight: 750; }
+.nonogram-waiting h2 { margin: 18px 0 0; }
+.nonogram-waiting p { color: #758286; }
+.waiting-pulse { width: 58px; height: 58px; border: 8px solid rgba(40,126,108,.16); border-top-color: #287e6c; border-radius: 50%; animation: nonogram-spin 1s linear infinite; }
+@keyframes nonogram-spin { to { transform: rotate(360deg); } }
+.nonogram-battle-bar { display: grid; grid-template-columns: 1.25fr 1fr 1fr; align-items: center; gap: 18px; padding: 14px 18px; margin-bottom: 18px; border-radius: 15px; background: rgba(255,255,255,.78); border: 1px solid rgba(37,50,56,.1); }
+.nonogram-battle-bar > div:first-child { display: flex; align-items: center; gap: 9px; }
+.nonogram-battle-bar > div:first-child span { color: #758286; font-size: 12px; }
+.nonogram-battle-bar > div:first-child strong { font-family: ui-monospace, monospace; letter-spacing: .08em; }
+.nonogram-battle-bar button { padding: 6px 9px; background: transparent; color: #287e6c; border-color: rgba(40,126,108,.3); font-size: 12px; }
+.battle-progress span { display: block; margin-bottom: 5px; font-size: 12px; font-weight: 700; }
+.battle-progress > div { height: 8px; border-radius: 9px; background: #dfe8e6; overflow: hidden; }
+.battle-progress i { display: block; height: 100%; background: #287e6c; border-radius: inherit; transition: width .25s; }
+.battle-progress.opponent i { background: #e69b46; }
+.nonogram-battle-result { width: min(520px, 100%); padding: 13px 18px; display: flex; justify-content: space-between; border-radius: 12px; }
+.nonogram-battle-result.won { background: #dff3eb; color: #1d6d5d; }
+.nonogram-battle-result.lost { background: #f8e8da; color: #89592a; }
+
+.app-page-dark .nonogram-page { --ng-text: #e4eceb; }
+.app-page-dark .nonogram-heading p, .app-page-dark .nonogram-help { color: #aebcba; }
+.app-page-dark .nonogram-size-panel, .app-page-dark .nonogram-play-area { background: rgba(22,29,31,.84); border-color: rgba(255,255,255,.12); }
+
+@media (max-width: 620px) {
+  .nonogram-page { width: calc(100% - 16px); padding-top: 18px; }
+  .nonogram-heading { align-items: center; }
+  .nonogram-heading > div:first-child p:last-child { display: none; }
+  .nonogram-meta { flex-direction: column; gap: 0; padding: 7px 10px; }
+  .nonogram-size-panel { flex-wrap: wrap; }
+  .nonogram-size-panel button { width: 100%; margin: 2px 0 0; }
+  .nonogram-play-area { padding: 12px 6px 18px; justify-items: start; }
+  .nonogram-board-wrap { --cell: clamp(20px, calc(74vw / var(--nonogram-size)), 36px); margin: 0 auto; grid-template-columns: calc(var(--row-clues) * 18px + 8px) auto; grid-template-rows: calc(var(--column-clues) * 18px + 8px) auto; }
+  .nonogram-battle-lobby { grid-template-columns: 1fr; }
+  .nonogram-battle-bar { grid-template-columns: 1fr; }
+  .nonogram-battle-bar > div:first-child { flex-wrap: wrap; }
+}

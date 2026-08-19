@@ -1,5 +1,12 @@
 type Pattern = boolean[];
 
+export type LogicalDifficultyStats = {
+  logicalSolved: boolean;
+  rounds: number;
+  initialForcedCells: number;
+  score: number;
+};
+
 function createPatterns(length: number, rawClues: number[]): Pattern[] {
   const clues = rawClues.filter((value) => value > 0);
   if (!clues.length) return [Array<boolean>(length).fill(false)];
@@ -27,6 +34,61 @@ function createPatterns(length: number, rawClues: number[]): Pattern[] {
 
 function patternMatches(pattern: Pattern, known: Array<boolean | null>) {
   return pattern.every((value, index) => known[index] == null || known[index] === value);
+}
+
+export function analyzeLogicalDifficulty(rowClues: number[][], columnClues: number[][]): LogicalDifficultyStats {
+  const size = rowClues.length;
+  const grid = Array.from({ length: size }, () => Array<boolean | null>(size).fill(null));
+  const rows = rowClues.map((clue) => createPatterns(size, clue));
+  const columns = columnClues.map((clue) => createPatterns(size, clue));
+  let rounds = 0;
+  let initialForcedCells = 0;
+
+  while (true) {
+    let deducedThisRound = 0;
+    for (let row = 0; row < size; row += 1) {
+      const valid = (rows[row] ?? []).filter((pattern) => patternMatches(pattern, grid[row] ?? []));
+      if (!valid.length) return { logicalSolved: false, rounds, initialForcedCells, score: 100 };
+      rows[row] = valid;
+      for (let column = 0; column < size; column += 1) {
+        const value = valid[0]?.[column] ?? false;
+        if (grid[row]?.[column] == null && valid.every((pattern) => pattern[column] === value)) {
+          grid[row]![column] = value;
+          deducedThisRound += 1;
+        }
+      }
+    }
+    for (let column = 0; column < size; column += 1) {
+      const known = Array.from({ length: size }, (_, row) => grid[row]?.[column] ?? null);
+      const valid = (columns[column] ?? []).filter((pattern) => patternMatches(pattern, known));
+      if (!valid.length) return { logicalSolved: false, rounds, initialForcedCells, score: 100 };
+      columns[column] = valid;
+      for (let row = 0; row < size; row += 1) {
+        const value = valid[0]?.[row] ?? false;
+        if (grid[row]?.[column] == null && valid.every((pattern) => pattern[row] === value)) {
+          grid[row]![column] = value;
+          deducedThisRound += 1;
+        }
+      }
+    }
+    if (!deducedThisRound) break;
+    rounds += 1;
+    if (rounds === 1) initialForcedCells = deducedThisRound;
+  }
+
+  const allClues = [...rowClues, ...columnClues];
+  const values = allClues.flat().filter((value) => value > 0);
+  const shortRatio = values.filter((value) => value <= 2).length / Math.max(1, values.length);
+  const multiGroupRatio = allClues.filter((clues) => clues.filter((value) => value > 0).length >= 3).length / Math.max(1, allClues.length);
+  const initialForcedRatio = initialForcedCells / Math.max(1, size * size);
+  const logicalSolved = grid.every((line) => line.every((cell) => cell != null));
+  const score = Math.round(
+    (1 - initialForcedRatio) * 45
+    + Math.min(rounds, 6) / 6 * 20
+    + shortRatio * 20
+    + multiGroupRatio * 15,
+  );
+  return { logicalSolved, rounds, initialForcedCells, score };
 }
 
 export function countSolutions(rowClues: number[][], columnClues: number[][], limit = 2): number {

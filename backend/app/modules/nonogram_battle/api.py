@@ -16,7 +16,7 @@ def error(code: str) -> ApiResponse:
 @router.post("/create", response_model=ApiResponse)
 def create(req: CreateReq) -> ApiResponse:
     try:
-        state = create_match(req.userId, req.size)
+        state = create_match(req.userId, req.size, req.difficulty)
         nonogram_battle_repo.create(state)
         log.info("nonogram_battle_create matchId=%s size=%s", state["matchId"], req.size)
         return ApiResponse(ok=True, data=status_payload(state, req.userId), error=None)

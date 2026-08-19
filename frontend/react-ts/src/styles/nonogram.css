@@ -18,6 +18,10 @@
 .nonogram-size-panel input { width: 64px; padding: 8px; border: 1px solid #b9c5c7; border-radius: 8px; background: white; color: #253238; font: inherit; text-align: center; }
 .nonogram-size-panel button, .nonogram-new-btn, .nonogram-result button:first-of-type { border: 0; background: #287e6c; color: white; font-weight: 700; box-shadow: 0 5px 14px rgba(40,126,108,.22); }
 .nonogram-size-panel button { margin-left: auto; }
+.nonogram-difficulty { display: inline-flex; gap: 3px; padding: 3px; border-radius: 10px; background: #e6eceb; }
+.nonogram-size-panel .nonogram-difficulty { margin-left: 8px; }
+.nonogram-size-panel .nonogram-difficulty button, .nonogram-difficulty button { margin: 0; padding: 7px 12px; border: 0; border-radius: 7px; background: transparent; color: #536164; box-shadow: none; font-weight: 700; }
+.nonogram-difficulty button.active { background: #fff; color: #1f6557; box-shadow: 0 2px 7px rgba(31,53,58,.12); }
 
 .nonogram-play-area { display: grid; justify-items: center; gap: 20px; padding: clamp(14px, 3vw, 28px); border: 1px solid rgba(37,50,56,.1); border-radius: 20px; background: rgba(255,255,255,.76); box-shadow: 0 18px 48px rgba(31,53,58,.08); overflow-x: auto; }
 .nonogram-board-wrap { --cell: clamp(25px, calc(68vw / var(--nonogram-size)), 44px); display: grid; grid-template-columns: calc(var(--row-clues) * 24px + 12px) auto; grid-template-rows: calc(var(--column-clues) * 22px + 10px) auto; user-select: none; touch-action: none; }
@@ -60,6 +64,7 @@
 .lobby-controls { display: flex; align-items: center; gap: 10px; }
 .lobby-controls input { width: 76px; padding: 10px; border: 1px solid #b9c5c7; border-radius: 9px; background: white; color: #253238; font: inherit; }
 .lobby-controls input.room-input { width: 100%; text-transform: lowercase; }
+.lobby-difficulty { margin-top: 12px; align-self: flex-start; }
 .nonogram-loading, .nonogram-waiting { min-height: 420px; display: grid; place-items: center; align-content: center; text-align: center; }
 .nonogram-loading h2, .nonogram-loading p { margin: 5px; }
 .nonogram-loading p { color: #758286; }
@@ -91,7 +96,9 @@
   .nonogram-heading > div:first-child p:last-child { display: none; }
   .nonogram-meta { flex-direction: column; gap: 0; padding: 7px 10px; }
   .nonogram-size-panel { flex-wrap: wrap; }
-  .nonogram-size-panel button { width: 100%; margin: 2px 0 0; }
+  .nonogram-size-panel > button { width: 100%; margin: 2px 0 0; }
+  .nonogram-size-panel .nonogram-difficulty { width: 100%; margin: 2px 0; }
+  .nonogram-size-panel .nonogram-difficulty button { width: auto; flex: 1; }
   .nonogram-play-area { padding: 12px 6px 18px; justify-items: start; }
   .nonogram-board-wrap { --cell: clamp(20px, calc(74vw / var(--nonogram-size)), 36px); margin: 0 auto; grid-template-columns: calc(var(--row-clues) * 18px + 8px) auto; grid-template-rows: calc(var(--column-clues) * 18px + 8px) auto; }
   .nonogram-battle-lobby { grid-template-columns: 1fr; }

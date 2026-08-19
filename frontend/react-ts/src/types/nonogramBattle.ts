@@ -1,4 +1,4 @@
-import type { CellState } from "../games/nonogram/types";
+import type { CellState, NonogramDifficulty } from "../games/nonogram/types";
 
 export type NonogramBattleStatus = "waiting" | "playing" | "finished";
 
@@ -6,6 +6,7 @@ export type NonogramBattleData = {
   matchId: string;
   status: NonogramBattleStatus;
   size: number;
+  difficulty: NonogramDifficulty;
   rowClues: number[][];
   columnClues: number[][];
   startedAt: number | null;

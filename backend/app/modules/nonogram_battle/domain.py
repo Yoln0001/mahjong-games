@@ -100,18 +100,98 @@ def count_solutions(row_clues: List[List[int]], column_clues: List[List[int]], l
     return search([[None] * size for _ in range(size)], base_rows, base_columns)
 
 
-def generate_puzzle(size: int) -> tuple[List[List[bool]], List[List[int]], List[List[int]]]:
-    for _ in range(120):
-        density = random.uniform(0.42, 0.56)
-        solution = [[random.random() < density for _ in range(size)] for _ in range(size)]
+def _logical_difficulty_score(row_clues: List[List[int]], column_clues: List[List[int]]) -> Optional[int]:
+    size = len(row_clues)
+    grid: List[List[Optional[bool]]] = [[None] * size for _ in range(size)]
+    rows = [_patterns(size, clue) for clue in row_clues]
+    columns = [_patterns(size, clue) for clue in column_clues]
+    rounds = 0
+    initial_forced = 0
+
+    def matches(pattern: List[bool], known: List[Optional[bool]]) -> bool:
+        return all(value is None or pattern[index] == value for index, value in enumerate(known))
+
+    while True:
+        deduced = 0
+        for row in range(size):
+            valid = [pattern for pattern in rows[row] if matches(pattern, grid[row])]
+            if not valid:
+                return None
+            rows[row] = valid
+            for column in range(size):
+                value = valid[0][column]
+                if grid[row][column] is None and all(pattern[column] == value for pattern in valid):
+                    grid[row][column] = value
+                    deduced += 1
+        for column in range(size):
+            known = [grid[row][column] for row in range(size)]
+            valid = [pattern for pattern in columns[column] if matches(pattern, known)]
+            if not valid:
+                return None
+            columns[column] = valid
+            for row in range(size):
+                value = valid[0][row]
+                if grid[row][column] is None and all(pattern[row] == value for pattern in valid):
+                    grid[row][column] = value
+                    deduced += 1
+        if not deduced:
+            break
+        rounds += 1
+        if rounds == 1:
+            initial_forced = deduced
+
+    if any(cell is None for line in grid for cell in line):
+        return None
+    all_clues = row_clues + column_clues
+    values = [value for clues in all_clues for value in clues if value > 0]
+    short_ratio = sum(value <= 2 for value in values) / max(1, len(values))
+    multi_ratio = sum(len([value for value in clues if value > 0]) >= 3 for clues in all_clues) / max(1, len(all_clues))
+    initial_ratio = initial_forced / max(1, size * size)
+    return round((1 - initial_ratio) * 45 + min(rounds, 6) / 6 * 20 + short_ratio * 20 + multi_ratio * 15)
+
+
+def _random_solution(size: int, difficulty: str) -> List[List[bool]]:
+    density = random.uniform(0.52, 0.66) if difficulty == "easy" else random.uniform(0.42, 0.56)
+    solution = [[random.random() < density for _ in range(size)] for _ in range(size)]
+    passes = 2 if difficulty == "easy" else 1 if difficulty == "normal" else 0
+    for _ in range(passes):
+        for row in range(size):
+            for column in range(size):
+                neighbors = sum(
+                    bool(solution[r][c])
+                    for r, c in ((row - 1, column), (row + 1, column), (row, column - 1), (row, column + 1))
+                    if 0 <= r < size and 0 <= c < size
+                )
+                if neighbors >= 3 and random.random() < 0.35:
+                    solution[row][column] = True
+    return solution
+
+
+def generate_puzzle(size: int, difficulty: str = "normal") -> tuple[List[List[bool]], List[List[int]], List[List[int]]]:
+    ranges = {"easy": (0, 54, 38), "normal": (55, 71, 63), "hard": (72, 100, 82)}
+    low, high, target = ranges.get(difficulty, ranges["normal"])
+    closest: Optional[tuple[int, List[List[bool]], List[List[int]], List[List[int]]]] = None
+    for _ in range(240):
+        solution = _random_solution(size, difficulty)
         filled = sum(sum(1 for cell in row if cell) for row in solution)
         if filled < size or filled > size * size - size:
             continue
         rows, columns = solution_clues(solution)
-        if count_solutions(rows, columns) == 1:
+        if count_solutions(rows, columns) != 1:
+            continue
+        score = _logical_difficulty_score(rows, columns)
+        if score is None:
+            continue
+        distance = abs(score - target)
+        if closest is None or distance < closest[0]:
+            closest = (distance, solution, rows, columns)
+        if low <= score <= high:
             return solution, rows, columns
 
-    solution = [[row == column or row + column == size - 1 or row == size // 2 for column in range(size)] for row in range(size)]
+    if closest is not None:
+        return closest[1], closest[2], closest[3]
+
+    solution = [[column <= row for column in range(size)] for row in range(size)]
     rows, columns = solution_clues(solution)
     return solution, rows, columns
 
@@ -120,8 +200,8 @@ def _empty_board(size: int) -> List[List[str]]:
     return [["unknown"] * size for _ in range(size)]
 
 
-def create_match(user_id: str, size: int) -> Dict[str, Any]:
-    solution, row_clues, column_clues = generate_puzzle(size)
+def create_match(user_id: str, size: int, difficulty: str = "normal") -> Dict[str, Any]:
+    solution, row_clues, column_clues = generate_puzzle(size, difficulty)
     return {
         "matchId": uuid.uuid4().hex[:10],
         "createdAt": time.time(),
@@ -129,6 +209,7 @@ def create_match(user_id: str, size: int) -> Dict[str, Any]:
         "finishedAt": None,
         "status": "waiting",
         "size": size,
+        "difficulty": difficulty,
         "solution": solution,
         "rowClues": row_clues,
         "columnClues": column_clues,
@@ -203,6 +284,7 @@ def status_payload(state: Dict[str, Any], user_id: str) -> Dict[str, Any]:
         "matchId": state["matchId"],
         "status": state["status"],
         "size": state["size"],
+        "difficulty": state.get("difficulty", "normal"),
         "rowClues": state["rowClues"],
         "columnClues": state["columnClues"],
         "startedAt": state["startedAt"],

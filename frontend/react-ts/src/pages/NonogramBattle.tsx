@@ -3,7 +3,7 @@ import { message } from "antd";
 import { useNavigate, useParams } from "react-router-dom";
 import NonogramBoard from "../components/nonogram/NonogramBoard";
 import NonogramToolbar from "../components/nonogram/NonogramToolbar";
-import type { CellState, DrawMode, NonogramPuzzle } from "../games/nonogram/types";
+import type { CellState, DrawMode, NonogramDifficulty, NonogramPuzzle } from "../games/nonogram/types";
 import { clearNonogramBattle, createNonogramBattle, getNonogramBattleStatus, joinNonogramBattle, moveNonogramBattle } from "../services/nonogramBattleApi";
 import type { NonogramBattleData } from "../types/nonogramBattle";
 import { getOrCreateUserId } from "../utils/userId";
@@ -33,6 +33,7 @@ export default function NonogramBattle() {
   const userId = useMemo(() => getOrCreateUserId(), []);
   const routeMatchId = params.matchId ?? "";
   const [size, setSize] = useState(10);
+  const [difficulty, setDifficulty] = useState<NonogramDifficulty>("normal");
   const [joinId, setJoinId] = useState("");
   const [data, setData] = useState<NonogramBattleData | null>(null);
   const [drawMode, setDrawMode] = useState<DrawMode>("filled");
@@ -73,7 +74,7 @@ export default function NonogramBattle() {
   async function createRoom() {
     try {
       setLoading(true);
-      const next = await createNonogramBattle(userId, size);
+      const next = await createNonogramBattle(userId, size, difficulty);
       setData(next);
       navigate(`/nonogram/battle/${next.matchId}`);
     } catch (error) {
@@ -93,6 +94,7 @@ export default function NonogramBattle() {
     size: data.size,
     rowClues: data.rowClues,
     columnClues: data.columnClues,
+    difficulty: data.difficulty,
     solution: Array.from({ length: data.size }, () => Array<boolean>(data.size).fill(false)),
   }) : null, [data]);
 
@@ -119,6 +121,13 @@ export default function NonogramBattle() {
           <div className="nonogram-lobby-card">
             <span className="lobby-number">01</span><h2>创建房间</h2><p>选择棋盘尺寸，生成一场新的对战。</p>
             <div className="lobby-controls"><input type="number" min={5} max={15} value={size} onChange={(event) => setSize(Math.max(5, Math.min(15, Number(event.target.value) || 5)))} /><span>× {size}</span></div>
+            <div className="nonogram-difficulty lobby-difficulty" role="group" aria-label="题目难度">
+              {(["easy", "normal", "hard"] as NonogramDifficulty[]).map((value) => (
+                <button key={value} type="button" className={difficulty === value ? "active" : ""} onClick={() => setDifficulty(value)}>
+                  {{ easy: "简单", normal: "普通", hard: "困难" }[value]}
+                </button>
+              ))}
+            </div>
             <button type="button" disabled={loading} onClick={() => void createRoom()}>创建对战</button>
           </div>
           <div className="nonogram-lobby-card">

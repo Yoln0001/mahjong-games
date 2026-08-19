@@ -1,6 +1,6 @@
 import { api } from "./api";
 import type { ApiResponse } from "../types/api";
-import type { CellState } from "../games/nonogram/types";
+import type { CellState, NonogramDifficulty } from "../games/nonogram/types";
 import type { NonogramBattleData } from "../types/nonogramBattle";
 
 const PREFIX = "/api/nonogram-battle";
@@ -10,8 +10,8 @@ function unwrap<T>(response: ApiResponse<T>): T {
   return response.data;
 }
 
-export async function createNonogramBattle(userId: string, size: number) {
-  return unwrap((await api.post<ApiResponse<NonogramBattleData>>(`${PREFIX}/create`, { userId, size })).data);
+export async function createNonogramBattle(userId: string, size: number, difficulty: NonogramDifficulty) {
+  return unwrap((await api.post<ApiResponse<NonogramBattleData>>(`${PREFIX}/create`, { userId, size, difficulty })).data);
 }
 
 export async function joinNonogramBattle(matchId: string, userId: string) {

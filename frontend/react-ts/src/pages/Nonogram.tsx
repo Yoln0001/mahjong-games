@@ -5,7 +5,7 @@ import NonogramBoard from "../components/nonogram/NonogramBoard";
 import NonogramToolbar from "../components/nonogram/NonogramToolbar";
 import { createGame, isSolved } from "../games/nonogram/game";
 import { generatePuzzle } from "../games/nonogram/generator";
-import type { CellState, DrawMode, NonogramGame } from "../games/nonogram/types";
+import type { CellState, DrawMode, NonogramDifficulty, NonogramGame } from "../games/nonogram/types";
 import "../styles/nonogram.css";
 
 declare global {
@@ -23,22 +23,23 @@ function formatTime(seconds: number) {
 export default function Nonogram() {
   const navigate = useNavigate();
   const [requestedSize, setRequestedSize] = useState(10);
-  const [game, setGame] = useState<NonogramGame>(() => createGame(generatePuzzle(10)));
+  const [requestedDifficulty, setRequestedDifficulty] = useState<NonogramDifficulty>("normal");
+  const [game, setGame] = useState<NonogramGame>(() => createGame(generatePuzzle(10, "normal")));
   const [drawMode, setDrawMode] = useState<DrawMode>("filled");
   const [elapsed, setElapsed] = useState(0);
   const [resultOpen, setResultOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
 
-  const newGame = useCallback((size = requestedSize) => {
+  const newGame = useCallback((size = requestedSize, difficulty = requestedDifficulty) => {
     setGenerating(true);
     window.setTimeout(() => {
-      const next = createGame(generatePuzzle(size));
+      const next = createGame(generatePuzzle(size, difficulty));
       setGame(next);
       setElapsed(0);
       setResultOpen(false);
       setGenerating(false);
     }, 20);
-  }, [requestedSize]);
+  }, [requestedDifficulty, requestedSize]);
 
   const clearBoard = useCallback(() => {
     setGame((current) => ({
@@ -48,9 +49,7 @@ export default function Nonogram() {
       ),
       finished: false,
       finishedAt: null,
-      startedAt: Date.now(),
     }));
-    setElapsed(0);
     setResultOpen(false);
   }, []);
 
@@ -84,6 +83,7 @@ export default function Nonogram() {
     mode: game.finished ? "completed" : "playing",
     coordinateSystem: "row and column are zero-based from the top-left",
     size: game.puzzle.size,
+    difficulty: game.puzzle.difficulty,
     drawMode,
     elapsedSeconds: elapsed,
     rowClues: game.puzzle.rowClues,
@@ -119,7 +119,7 @@ export default function Nonogram() {
           <p>根据行列数字，找出隐藏的图案。</p>
         </div>
         <div className="nonogram-meta">
-          <span>{game.puzzle.size} × {game.puzzle.size}</span>
+          <span>{game.puzzle.size} × {game.puzzle.size} · {{ easy: "简单", normal: "普通", hard: "困难" }[game.puzzle.difficulty]}</span>
           <strong>{formatTime(elapsed)}</strong>
         </div>
         <button className="nonogram-battle-entry" type="button" onClick={() => navigate("/nonogram/battle")}>双人对战</button>
@@ -136,6 +136,18 @@ export default function Nonogram() {
           onChange={(event) => setRequestedSize(Math.max(5, Math.min(15, Number(event.target.value) || 5)))}
         />
         <span>× {requestedSize}</span>
+        <div className="nonogram-difficulty" role="group" aria-label="题目难度">
+          {(["easy", "normal", "hard"] as NonogramDifficulty[]).map((difficulty) => (
+            <button
+              key={difficulty}
+              type="button"
+              className={requestedDifficulty === difficulty ? "active" : ""}
+              onClick={() => setRequestedDifficulty(difficulty)}
+            >
+              {{ easy: "简单", normal: "普通", hard: "困难" }[difficulty]}
+            </button>
+          ))}
+        </div>
         <button type="button" disabled={generating} onClick={() => newGame()}>
           {generating ? "生成中…" : "生成随机题目"}
         </button>

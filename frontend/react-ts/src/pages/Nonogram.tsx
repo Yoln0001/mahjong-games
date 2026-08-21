@@ -20,14 +20,75 @@ function formatTime(seconds: number) {
   return `${String(minutes).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
+const NONOGRAM_SAVE_KEY = "mahjong-games:nonogram:save:v1";
+
+type NonogramSave = {
+  version: 1;
+  game: NonogramGame;
+  elapsed: number;
+  requestedSize: number;
+  requestedDifficulty: NonogramDifficulty;
+  drawMode: DrawMode;
+};
+
+function isDifficulty(value: unknown): value is NonogramDifficulty {
+  return value === "easy" || value === "normal" || value === "hard";
+}
+
+function isCellState(value: unknown): value is CellState {
+  return value === "unknown" || value === "filled" || value === "marked";
+}
+
+function loadSavedGame(): NonogramSave | null {
+  try {
+    const raw = window.localStorage.getItem(NONOGRAM_SAVE_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw) as Partial<NonogramSave>;
+    const game = saved.game;
+    const size = game?.puzzle?.size;
+    if (
+      saved.version !== 1
+      || !game
+      || !Number.isInteger(size)
+      || size == null
+      || size < 5
+      || size > 15
+      || !isDifficulty(game.puzzle.difficulty)
+      || !Array.isArray(game.puzzle.solution)
+      || game.puzzle.solution.length !== size
+      || !game.puzzle.solution.every((row) => Array.isArray(row) && row.length === size && row.every((cell) => typeof cell === "boolean"))
+      || !Array.isArray(game.board)
+      || game.board.length !== size
+      || !game.board.every((row) => Array.isArray(row) && row.length === size && row.every(isCellState))
+      || !Number.isFinite(saved.elapsed)
+    ) return null;
+
+    const elapsed = Math.max(0, Math.floor(saved.elapsed ?? 0));
+    return {
+      version: 1,
+      game: {
+        ...game,
+        startedAt: game.finished ? game.startedAt : Date.now() - elapsed * 1000,
+      },
+      elapsed,
+      requestedSize: Number.isInteger(saved.requestedSize) ? Math.max(5, Math.min(15, saved.requestedSize ?? size)) : size,
+      requestedDifficulty: isDifficulty(saved.requestedDifficulty) ? saved.requestedDifficulty : game.puzzle.difficulty,
+      drawMode: saved.drawMode === "marked" ? "marked" : "filled",
+    };
+  } catch {
+    return null;
+  }
+}
+
 export default function Nonogram() {
   const navigate = useNavigate();
-  const [requestedSize, setRequestedSize] = useState(10);
-  const [requestedDifficulty, setRequestedDifficulty] = useState<NonogramDifficulty>("normal");
-  const [game, setGame] = useState<NonogramGame>(() => createGame(generatePuzzle(10, "normal")));
-  const [drawMode, setDrawMode] = useState<DrawMode>("filled");
-  const [elapsed, setElapsed] = useState(0);
-  const [resultOpen, setResultOpen] = useState(false);
+  const [restored] = useState(loadSavedGame);
+  const [requestedSize, setRequestedSize] = useState(restored?.requestedSize ?? 10);
+  const [requestedDifficulty, setRequestedDifficulty] = useState<NonogramDifficulty>(restored?.requestedDifficulty ?? "normal");
+  const [game, setGame] = useState<NonogramGame>(() => restored?.game ?? createGame(generatePuzzle(10, "normal")));
+  const [drawMode, setDrawMode] = useState<DrawMode>(restored?.drawMode ?? "filled");
+  const [elapsed, setElapsed] = useState(restored?.elapsed ?? 0);
+  const [resultOpen, setResultOpen] = useState(restored?.game.finished ?? false);
   const [generating, setGenerating] = useState(false);
 
   const newGame = useCallback((size = requestedSize, difficulty = requestedDifficulty) => {
@@ -78,6 +139,22 @@ export default function Nonogram() {
     const timer = window.setInterval(tick, 1000);
     return () => window.clearInterval(timer);
   }, [game.finished, game.startedAt]);
+
+  useEffect(() => {
+    const saved: NonogramSave = {
+      version: 1,
+      game,
+      elapsed,
+      requestedSize,
+      requestedDifficulty,
+      drawMode,
+    };
+    try {
+      window.localStorage.setItem(NONOGRAM_SAVE_KEY, JSON.stringify(saved));
+    } catch {
+      // Browsers may disable storage in private mode; gameplay should continue.
+    }
+  }, [drawMode, elapsed, game, requestedDifficulty, requestedSize]);
 
   const textState = useMemo(() => ({
     mode: game.finished ? "completed" : "playing",
@@ -156,7 +233,7 @@ export default function Nonogram() {
       <section className="nonogram-play-area" aria-busy={generating}>
         <NonogramBoard puzzle={game.puzzle} board={game.board} drawMode={drawMode} disabled={generating} onPaint={paint} />
         <NonogramToolbar mode={drawMode} onModeChange={setDrawMode} onClear={clearBoard} onNew={() => newGame()} />
-        <p className="nonogram-help">左键或拖动填色，右键标记空格；手机端可使用下方模式切换。</p>
+        <p className="nonogram-help">点击格子填色，右键标记空格；手机端可使用下方模式切换。</p>
       </section>
 
       <Modal open={resultOpen} footer={null} closable={false} centered className="nonogram-result-modal">

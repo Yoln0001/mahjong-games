@@ -151,7 +151,13 @@ def _logical_difficulty_score(row_clues: List[List[int]], column_clues: List[Lis
 
 
 def _random_solution(size: int, difficulty: str) -> List[List[bool]]:
-    density = random.uniform(0.52, 0.66) if difficulty == "easy" else random.uniform(0.42, 0.56)
+    density = (
+        random.uniform(0.52, 0.66)
+        if difficulty == "easy"
+        else random.uniform(0.56, 0.60)
+        if size > 15
+        else random.uniform(0.42, 0.56)
+    )
     solution = [[random.random() < density for _ in range(size)] for _ in range(size)]
     passes = 2 if difficulty == "easy" else 1 if difficulty == "normal" else 0
     for _ in range(passes):
@@ -167,31 +173,7 @@ def _random_solution(size: int, difficulty: str) -> List[List[bool]]:
     return solution
 
 
-def _large_board_solution(size: int, difficulty: str) -> List[List[bool]]:
-    def filled(row: int, column: int) -> bool:
-        if difficulty == "easy":
-            return column <= row
-        if difficulty == "normal":
-            return column <= row // 2 or column >= size - 1 - row // 3
-        return (column <= row) != (column >= size - 1 - row // 2)
-
-    solution = [[filled(row, column) for column in range(size)] for row in range(size)]
-    if random.random() < 0.5:
-        solution = [list(reversed(row)) for row in solution]
-    if random.random() < 0.5:
-        solution.reverse()
-    if random.random() < 0.5:
-        solution = [[solution[column][row] for column in range(size)] for row in range(size)]
-    return solution
-
-
 def generate_puzzle(size: int, difficulty: str = "normal") -> tuple[List[List[bool]], List[List[int]], List[List[int]]]:
-    # Large fully-random grids can produce huge pattern domains. Monotone
-    # silhouettes are uniquely determined and remain fast at 25x25.
-    if size > 15:
-        solution = _large_board_solution(size, difficulty)
-        rows, columns = solution_clues(solution)
-        return solution, rows, columns
     ranges = {"easy": (0, 54, 38), "normal": (55, 71, 63), "hard": (72, 100, 82)}
     low, high, target = ranges.get(difficulty, ranges["normal"])
     closest: Optional[tuple[int, List[List[bool]], List[List[int]], List[List[int]]]] = None
@@ -201,9 +183,9 @@ def generate_puzzle(size: int, difficulty: str = "normal") -> tuple[List[List[bo
         if filled < size or filled > size * size - size:
             continue
         rows, columns = solution_clues(solution)
-        if count_solutions(rows, columns) != 1:
-            continue
         score = _logical_difficulty_score(rows, columns)
+        # A grid fully resolved by deterministic deductions has exactly one
+        # solution, so an additional branching solution count is unnecessary.
         if score is None:
             continue
         distance = abs(score - target)

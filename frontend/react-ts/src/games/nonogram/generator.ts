@@ -1,11 +1,13 @@
 import { solutionToClues } from "./clues";
-import { analyzeLogicalDifficulty, countSolutions } from "./solver";
+import { analyzeLogicalDifficulty } from "./solver";
 import type { NonogramDifficulty, NonogramPuzzle } from "./types";
 
 function randomSolution(size: number, difficulty: NonogramDifficulty): boolean[][] {
   const density = difficulty === "easy"
     ? 0.52 + Math.random() * 0.14
-    : 0.42 + Math.random() * 0.14;
+    : size > 15
+      ? 0.56 + Math.random() * 0.04
+      : 0.42 + Math.random() * 0.14;
   const solution = Array.from({ length: size }, () =>
     Array.from({ length: size }, () => Math.random() < density),
   );
@@ -26,26 +28,6 @@ function randomSolution(size: number, difficulty: NonogramDifficulty): boolean[]
   return solution;
 }
 
-function largeBoardSolution(size: number, difficulty: NonogramDifficulty): boolean[][] {
-  let solution = Array.from({ length: size }, (_, row) =>
-    Array.from({ length: size }, (_, column) => {
-      if (difficulty === "easy") return column <= row;
-      if (difficulty === "normal") {
-        return column <= Math.floor(row / 2) || column >= size - 1 - Math.floor(row / 3);
-      }
-      return (column <= row) !== (column >= size - 1 - Math.floor(row / 2));
-    }),
-  );
-  if (Math.random() < 0.5) solution = solution.map((row) => [...row].reverse());
-  if (Math.random() < 0.5) solution = [...solution].reverse();
-  if (Math.random() < 0.5) {
-    solution = Array.from({ length: size }, (_, row) =>
-      Array.from({ length: size }, (_, column) => solution[column]![row]!),
-    );
-  }
-  return solution;
-}
-
 function scoreRange(difficulty: NonogramDifficulty) {
   if (difficulty === "easy") return { min: 0, max: 54, target: 38 };
   if (difficulty === "hard") return { min: 72, max: 100, target: 82 };
@@ -54,13 +36,6 @@ function scoreRange(difficulty: NonogramDifficulty) {
 
 export function generatePuzzle(requestedSize: number, difficulty: NonogramDifficulty = "normal"): NonogramPuzzle {
   const size = Math.max(5, Math.min(25, Math.round(requestedSize)));
-  // Large fully-random grids can create enormous line-pattern domains. A
-  // randomized monotone silhouette stays unique and generates immediately.
-  if (size > 15) {
-    const solution = largeBoardSolution(size, difficulty);
-    const { rowClues, columnClues } = solutionToClues(solution);
-    return { size, solution, rowClues, columnClues, difficulty };
-  }
   const range = scoreRange(difficulty);
   let closest: { puzzle: NonogramPuzzle; distance: number } | null = null;
   for (let attempt = 0; attempt < 240; attempt += 1) {
@@ -68,8 +43,9 @@ export function generatePuzzle(requestedSize: number, difficulty: NonogramDiffic
     const filled = solution.flat().filter(Boolean).length;
     if (filled < size || filled > size * size - size) continue;
     const { rowClues, columnClues } = solutionToClues(solution);
-    if (countSolutions(rowClues, columnClues, 2) !== 1) continue;
     const stats = analyzeLogicalDifficulty(rowClues, columnClues);
+    // A board fully resolved by deterministic line deductions is necessarily
+    // unique, so a separate branching solution count would be redundant.
     if (!stats.logicalSolved) continue;
     const puzzle = { size, solution, rowClues, columnClues, difficulty };
     const distance = Math.abs(stats.score - range.target);

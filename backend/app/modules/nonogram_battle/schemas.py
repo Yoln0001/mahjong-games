@@ -19,7 +19,7 @@ class ApiResponse(BaseModel):
 
 class CreateReq(BaseModel):
     userId: str = Field(..., min_length=1)
-    size: int = Field(10, ge=5, le=15)
+    size: int = Field(10, ge=5, le=25)
     difficulty: Literal["easy", "normal", "hard"] = "normal"
 
 

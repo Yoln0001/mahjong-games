@@ -13,6 +13,7 @@ type Props = {
 export default function NonogramBoard({ puzzle, board, drawMode, disabled, onPaint }: Props) {
   const maxRowClues = Math.max(...puzzle.rowClues.map((clues) => clues.length));
   const maxColumnClues = Math.max(...puzzle.columnClues.map((clues) => clues.length));
+  const cellMax = puzzle.size <= 10 ? 44 : puzzle.size <= 15 ? 38 : puzzle.size <= 20 ? 32 : 27;
 
   function start(row: number, column: number, pointerMode: DrawMode) {
     if (disabled) return;
@@ -26,6 +27,7 @@ export default function NonogramBoard({ puzzle, board, drawMode, disabled, onPai
         "--nonogram-size": puzzle.size,
         "--row-clues": maxRowClues,
         "--column-clues": maxColumnClues,
+        "--cell-max": `${cellMax}px`,
       } as React.CSSProperties}
     >
       <div className="nonogram-corner" aria-hidden="true" />

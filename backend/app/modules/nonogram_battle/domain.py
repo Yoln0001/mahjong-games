@@ -167,7 +167,31 @@ def _random_solution(size: int, difficulty: str) -> List[List[bool]]:
     return solution
 
 
+def _large_board_solution(size: int, difficulty: str) -> List[List[bool]]:
+    def filled(row: int, column: int) -> bool:
+        if difficulty == "easy":
+            return column <= row
+        if difficulty == "normal":
+            return column <= row // 2 or column >= size - 1 - row // 3
+        return (column <= row) != (column >= size - 1 - row // 2)
+
+    solution = [[filled(row, column) for column in range(size)] for row in range(size)]
+    if random.random() < 0.5:
+        solution = [list(reversed(row)) for row in solution]
+    if random.random() < 0.5:
+        solution.reverse()
+    if random.random() < 0.5:
+        solution = [[solution[column][row] for column in range(size)] for row in range(size)]
+    return solution
+
+
 def generate_puzzle(size: int, difficulty: str = "normal") -> tuple[List[List[bool]], List[List[int]], List[List[int]]]:
+    # Large fully-random grids can produce huge pattern domains. Monotone
+    # silhouettes are uniquely determined and remain fast at 25x25.
+    if size > 15:
+        solution = _large_board_solution(size, difficulty)
+        rows, columns = solution_clues(solution)
+        return solution, rows, columns
     ranges = {"easy": (0, 54, 38), "normal": (55, 71, 63), "hard": (72, 100, 82)}
     low, high, target = ranges.get(difficulty, ranges["normal"])
     closest: Optional[tuple[int, List[List[bool]], List[List[int]], List[List[int]]]] = None

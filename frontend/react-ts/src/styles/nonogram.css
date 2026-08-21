@@ -24,11 +24,11 @@
 .nonogram-difficulty button.active { background: #fff; color: #1f6557; box-shadow: 0 2px 7px rgba(31,53,58,.12); }
 
 .nonogram-play-area { display: grid; justify-items: center; gap: 20px; padding: clamp(14px, 3vw, 28px); border: 1px solid rgba(37,50,56,.1); border-radius: 20px; background: rgba(255,255,255,.76); box-shadow: 0 18px 48px rgba(31,53,58,.08); overflow-x: auto; }
-.nonogram-board-wrap { --cell: clamp(25px, calc(68vw / var(--nonogram-size)), 44px); display: grid; grid-template-columns: calc(var(--row-clues) * 24px + 12px) auto; grid-template-rows: calc(var(--column-clues) * 22px + 10px) auto; user-select: none; touch-action: none; }
+.nonogram-board-wrap { --cell: clamp(20px, calc(68vw / var(--nonogram-size)), var(--cell-max)); display: grid; grid-template-columns: calc(var(--row-clues) * 20px + 14px) auto; grid-template-rows: calc(var(--column-clues) * 20px + 10px) auto; user-select: none; touch-action: none; }
 .nonogram-corner { border-right: 2px solid #536164; border-bottom: 2px solid #536164; }
 .nonogram-column-clues { display: grid; grid-template-columns: repeat(var(--nonogram-size), var(--cell)); border-bottom: 2px solid #536164; }
 .nonogram-row-clues { display: grid; grid-template-rows: repeat(var(--nonogram-size), var(--cell)); border-right: 2px solid #536164; }
-.nonogram-clues { display: flex; align-items: center; justify-content: flex-end; gap: 5px; color: #344448; font-weight: 750; font-size: clamp(11px, 1.5vw, 15px); font-variant-numeric: tabular-nums; }
+.nonogram-clues { display: flex; align-items: center; justify-content: flex-end; gap: 5px; color: #344448; font-weight: 800; font-size: clamp(14px, 1.65vw, 18px); line-height: 1; font-variant-numeric: tabular-nums; }
 .nonogram-clues-row { padding: 0 8px; }
 .nonogram-clues-column { flex-direction: column; justify-content: flex-end; padding-bottom: 6px; gap: 0; }
 .nonogram-grid { display: grid; grid-template-columns: repeat(var(--nonogram-size), var(--cell)); grid-template-rows: repeat(var(--nonogram-size), var(--cell)); border-right: 2px solid #536164; border-bottom: 2px solid #536164; }
@@ -100,7 +100,7 @@
   .nonogram-size-panel .nonogram-difficulty { width: 100%; margin: 2px 0; }
   .nonogram-size-panel .nonogram-difficulty button { width: auto; flex: 1; }
   .nonogram-play-area { padding: 12px 6px 18px; justify-items: start; }
-  .nonogram-board-wrap { --cell: clamp(20px, calc(74vw / var(--nonogram-size)), 36px); margin: 0 auto; grid-template-columns: calc(var(--row-clues) * 18px + 8px) auto; grid-template-rows: calc(var(--column-clues) * 18px + 8px) auto; }
+  .nonogram-board-wrap { --cell: clamp(16px, calc(74vw / var(--nonogram-size)), min(36px, var(--cell-max))); margin: 0 auto; grid-template-columns: calc(var(--row-clues) * 19px + 8px) auto; grid-template-rows: calc(var(--column-clues) * 19px + 8px) auto; }
   .nonogram-battle-lobby { grid-template-columns: 1fr; }
   .nonogram-battle-bar { grid-template-columns: 1fr; }
   .nonogram-battle-bar > div:first-child { flex-wrap: wrap; }

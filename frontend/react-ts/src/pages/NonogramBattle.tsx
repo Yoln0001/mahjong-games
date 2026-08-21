@@ -120,7 +120,7 @@ export default function NonogramBattle() {
         <section className="nonogram-battle-lobby">
           <div className="nonogram-lobby-card">
             <span className="lobby-number">01</span><h2>创建房间</h2><p>选择棋盘尺寸，生成一场新的对战。</p>
-            <div className="lobby-controls"><input type="number" min={5} max={15} value={size} onChange={(event) => setSize(Math.max(5, Math.min(15, Number(event.target.value) || 5)))} /><span>× {size}</span></div>
+            <div className="lobby-controls"><input type="number" min={5} max={25} value={size} onChange={(event) => setSize(Math.max(5, Math.min(25, Number(event.target.value) || 5)))} /><span>× {size}</span></div>
             <div className="nonogram-difficulty lobby-difficulty" role="group" aria-label="题目难度">
               {(["easy", "normal", "hard"] as NonogramDifficulty[]).map((value) => (
                 <button key={value} type="button" className={difficulty === value ? "active" : ""} onClick={() => setDifficulty(value)}>

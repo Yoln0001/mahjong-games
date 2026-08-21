@@ -52,7 +52,7 @@ function loadSavedGame(): NonogramSave | null {
       || !Number.isInteger(size)
       || size == null
       || size < 5
-      || size > 15
+      || size > 25
       || !isDifficulty(game.puzzle.difficulty)
       || !Array.isArray(game.puzzle.solution)
       || game.puzzle.solution.length !== size
@@ -71,7 +71,7 @@ function loadSavedGame(): NonogramSave | null {
         startedAt: game.finished ? game.startedAt : Date.now() - elapsed * 1000,
       },
       elapsed,
-      requestedSize: Number.isInteger(saved.requestedSize) ? Math.max(5, Math.min(15, saved.requestedSize ?? size)) : size,
+      requestedSize: Number.isInteger(saved.requestedSize) ? Math.max(5, Math.min(25, saved.requestedSize ?? size)) : size,
       requestedDifficulty: isDifficulty(saved.requestedDifficulty) ? saved.requestedDifficulty : game.puzzle.difficulty,
       drawMode: saved.drawMode === "marked" ? "marked" : "filled",
     };
@@ -208,9 +208,9 @@ export default function Nonogram() {
           id="nonogram-size"
           type="number"
           min={5}
-          max={15}
+          max={25}
           value={requestedSize}
-          onChange={(event) => setRequestedSize(Math.max(5, Math.min(15, Number(event.target.value) || 5)))}
+          onChange={(event) => setRequestedSize(Math.max(5, Math.min(25, Number(event.target.value) || 5)))}
         />
         <span>× {requestedSize}</span>
         <div className="nonogram-difficulty" role="group" aria-label="题目难度">

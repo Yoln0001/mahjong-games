@@ -25,6 +25,25 @@ const COLS = 17;
 const ROWS = 8;
 const LINK_STORAGE_KEY = "mahjong-link:lastGame:v1";
 
+type LinkPersistedState = {
+    gameId: string;
+    userId: string;
+    finish: boolean;
+    elapsedSec?: number;
+};
+
+function loadLinkPersisted(): LinkPersistedState | null {
+    try {
+        const raw = localStorage.getItem(LINK_STORAGE_KEY);
+        if (!raw) return null;
+        const value = JSON.parse(raw);
+        if (!value?.gameId || !value?.userId) return null;
+        return value as LinkPersistedState;
+    } catch {
+        return null;
+    }
+}
+
 type GameState = {
     columns: string[][];
     topTiles: Array<string | null>;
@@ -98,6 +117,7 @@ export default function Link() {
     const routeGameId = normalizeUserId(params.gameId) ?? "";
     const routeUserId = normalizeUserId(searchParams.get("userId"));
     const userId = routeUserId ?? getOrCreateUserId();
+    const persisted0 = useMemo(() => loadLinkPersisted(), []);
 
     const [gameId, setGameId] = useState<string>(routeGameId);
     const [state, setState] = useState<GameState>(emptyState);
@@ -109,7 +129,12 @@ export default function Link() {
     const [tileHintEnabled, setTileHintEnabled] = useState(true);
     const [endOpen, setEndOpen] = useState(false);
     const [endDurationSec, setEndDurationSec] = useState<number>(0);
-    const [nowSec, setNowSec] = useState<number>(() => Date.now() / 1000);
+    const [elapsedSec, setElapsedSec] = useState<number>(() => {
+        if (persisted0?.gameId !== routeGameId || persisted0.userId !== userId) return 0;
+        return typeof persisted0.elapsedSec === "number"
+            ? Math.max(0, Math.floor(persisted0.elapsedSec))
+            : 0;
+    });
 
     const lastFinishRef = useRef<boolean>(false);
 
@@ -124,12 +149,12 @@ export default function Link() {
         try {
             localStorage.setItem(
                 LINK_STORAGE_KEY,
-                JSON.stringify({ gameId, userId, finish: state.finish })
+                JSON.stringify({ gameId, userId, finish: state.finish, elapsedSec })
             );
         } catch {
             // ignore
         }
-    }, [gameId, userId, state.finish]);
+    }, [elapsedSec, gameId, userId, state.finish]);
 
     // 拉取状态（进入页面或路由变化）
     useEffect(() => {
@@ -145,6 +170,17 @@ export default function Link() {
                 setLoading(true);
                 const res = await getLinkStatus(routeGameId, userId);
                 applyState(res);
+                const restored = normalizeState(res);
+                const samePersistedGame =
+                    persisted0?.gameId === routeGameId && persisted0.userId === userId;
+                const restoredElapsed =
+                    samePersistedGame && typeof persisted0.elapsedSec === "number"
+                        ? Math.max(0, Math.floor(persisted0.elapsedSec))
+                        : (restored.createdAt
+                            ? Math.max(0, Math.floor(Date.now() / 1000 - restored.createdAt))
+                            : 0);
+                setElapsedSec(restoredElapsed);
+                if (restored.finish) setEndDurationSec(restoredElapsed);
             } catch (e: any) {
                 message.error(e?.message || "获取状态失败");
             } finally {
@@ -158,11 +194,9 @@ export default function Link() {
     useEffect(() => {
         if (!state.finish || lastFinishRef.current) return;
         lastFinishRef.current = true;
-        const createdAt = typeof state.createdAt === "number" ? state.createdAt : null;
-        const nowSec = Date.now() / 1000;
-        setEndDurationSec(createdAt ? Math.max(0, Math.floor(nowSec - createdAt)) : 0);
+        setEndDurationSec(elapsedSec);
         setEndOpen(true);
-    }, [state.finish]);
+    }, [elapsedSec, state.finish]);
 
     // 关闭提示功能时，立即清掉当前高亮，避免残留状态
     useEffect(() => {
@@ -172,11 +206,12 @@ export default function Link() {
     }, [tileHintEnabled]);
 
     useEffect(() => {
+        if (loading || state.finish || !gameId || state.createdAt == null) return;
         const timer = window.setInterval(() => {
-            setNowSec(Date.now() / 1000);
+            setElapsedSec((prev) => prev + 1);
         }, 1000);
         return () => window.clearInterval(timer);
-    }, []);
+    }, [gameId, loading, state.createdAt, state.finish]);
 
     // 开始新局
     const onStartNew = useCallback(async () => {
@@ -188,6 +223,7 @@ export default function Link() {
             lastFinishRef.current = false;
             setEndOpen(false);
             setEndDurationSec(0);
+            setElapsedSec(0);
 
             // 同步 URL
             navigate(`/link/${encodeURIComponent(res.gameId)}?userId=${encodeURIComponent(userId)}`, {
@@ -216,6 +252,7 @@ export default function Link() {
             lastFinishRef.current = false;
             setEndOpen(false);
             setEndDurationSec(0);
+            setElapsedSec(0);
 
             navigate(`/link/${encodeURIComponent(newId)}?userId=${encodeURIComponent(userId)}`, {
                 replace: true,
@@ -315,7 +352,7 @@ export default function Link() {
                     : "rgba(245, 158, 11, 0.22)";
     const currentDurationSec = state.finish
         ? endDurationSec
-        : (state.createdAt ? Math.max(0, Math.floor(nowSec - state.createdAt)) : 0);
+        : elapsedSec;
 
     return (
         <div className="game-root">

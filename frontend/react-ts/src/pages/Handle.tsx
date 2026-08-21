@@ -40,6 +40,7 @@ type PersistedState = {
 
   gameCreatedAt?: number;
   lastGuessAt?: number;
+  elapsedSec?: number;
   hitCountValid?: number;
 
   score?: number;
@@ -174,7 +175,19 @@ export default function Handle() {
   const [score, setScore] = useState<number | null>(
     typeof (persisted0 as any)?.score === "number" ? ((persisted0 as any).score as number) : null
   );
-  const [nowSec, setNowSec] = useState<number>(() => Date.now() / 1000);
+  const [elapsedSec, setElapsedSec] = useState<number>(() => {
+    const isSameGame = !routeGameId || persisted0?.gameId === routeGameId;
+    if (!isSameGame) return 0;
+    if (typeof persisted0?.elapsedSec === "number") {
+      return Math.max(0, Math.floor(persisted0.elapsedSec));
+    }
+    return computeDurationSec(
+      typeof persisted0?.gameCreatedAt === "number" ? persisted0.gameCreatedAt : null,
+      persisted0?.finish && typeof persisted0?.lastGuessAt === "number"
+        ? persisted0.lastGuessAt
+        : Date.now() / 1000
+    );
+  });
 
   const [infoOpen, setInfoOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -212,6 +225,7 @@ export default function Handle() {
       ruleMode: next.ruleMode ?? ruleMode,
       gameCreatedAt: typeof next.gameCreatedAt === "number" ? next.gameCreatedAt : (gameCreatedAt ?? undefined),
       lastGuessAt: typeof next.lastGuessAt === "number" ? next.lastGuessAt : (lastGuessAt ?? undefined),
+      elapsedSec: typeof next.elapsedSec === "number" ? Math.max(0, Math.floor(next.elapsedSec)) : elapsedSec,
       hitCountValid: typeof next.hitCountValid === "number" ? next.hitCountValid : hitCountValid,
       score: typeof (next as any).score === "number" ? ((next as any).score as number) : (score ?? undefined),
       answerTiles14: Array.isArray((next as any).answerTiles14)
@@ -258,6 +272,15 @@ export default function Handle() {
         ? historyAny[historyAny.length - 1].createdAt
         : (typeof persisted0?.lastGuessAt === "number" ? persisted0.lastGuessAt : null);
 
+    const samePersistedGame = persisted0?.gameId === (statusAny.gameId || gameIdToLoad);
+    const elapsedSecNext =
+      samePersistedGame && typeof persisted0?.elapsedSec === "number"
+        ? Math.max(0, Math.floor(persisted0.elapsedSec))
+        : computeDurationSec(
+            gameCreatedAtNext,
+            !!statusAny.finish ? lastGuessAtNext : Date.now() / 1000
+          );
+
     setGameId(statusAny.gameId || gameIdToLoad);
     setRows(restoredRows);
     setHint(statusAny.hint);
@@ -269,6 +292,7 @@ export default function Handle() {
 
     setGameCreatedAt(gameCreatedAtNext);
     setLastGuessAt(lastGuessAtNext);
+    setElapsedSec(elapsedSecNext);
     setHitCountValid(hitCountValidNext);
 
     const scoreNext = typeof statusAny?.score === "number" ? statusAny.score : null;
@@ -287,6 +311,7 @@ export default function Handle() {
       ruleMode: nextRuleMode,
       gameCreatedAt: gameCreatedAtNext ?? undefined,
       lastGuessAt: lastGuessAtNext ?? undefined,
+      elapsedSec: elapsedSecNext,
       hitCountValid: hitCountValidNext,
       score: scoreNext ?? undefined,
       answerTiles14: undefined,
@@ -321,6 +346,7 @@ export default function Handle() {
 
       setGameCreatedAt(null);
       setLastGuessAt(null);
+      setElapsedSec(0);
       setHitCountValid(0);
       setScore(null);
 
@@ -348,6 +374,7 @@ export default function Handle() {
         ruleMode: modeToUse,
         gameCreatedAt: createdAt ?? undefined,
         lastGuessAt: undefined,
+        elapsedSec: 0,
         hitCountValid: 0,
         score: undefined,
         answerTiles14: undefined,
@@ -439,6 +466,7 @@ export default function Handle() {
         ruleMode,
         gameCreatedAt: (gameCreatedAtNext ?? undefined),
         lastGuessAt: lastGuessAtNext,
+        elapsedSec,
         hitCountValid: hitCountValidNext,
         score: (nextFinish && typeof scoreNext === "number") ? scoreNext : undefined,
         answerTiles14: undefined,
@@ -469,7 +497,7 @@ export default function Handle() {
     }
 
     if (!finish && nextFinish) {
-      const durationSec = computeDurationSec(gameCreatedAtNext ?? null, lastGuessAtNext ?? null);
+      const durationSec = elapsedSec;
       showEndSummary({
         win: nextWin,
         hitCountValid: hitCountValidNext,
@@ -639,16 +667,21 @@ export default function Handle() {
 
   const pickFrameColor = (themeStyle === "noir" || themeStyle === "arcade") ? "#ffffff" : "#000000";
   const cellRadius = 10;
-  const currentDurationSec = finish
-    ? computeDurationSec(gameCreatedAt, lastGuessAt)
-    : (gameCreatedAt == null ? 0 : Math.max(0, Math.floor(nowSec - gameCreatedAt)));
+  const currentDurationSec = elapsedSec;
 
   useEffect(() => {
+    if (loading || finish || !gameId || gameCreatedAt == null) return;
     const timer = window.setInterval(() => {
-      setNowSec(Date.now() / 1000);
+      setElapsedSec((prev) => prev + 1);
     }, 1000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [finish, gameCreatedAt, gameId, loading]);
+
+  useEffect(() => {
+    if (!gameId) return;
+    persistSnapshot({ elapsedSec });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [elapsedSec, gameId]);
 
   return (
     <div className="game-root">

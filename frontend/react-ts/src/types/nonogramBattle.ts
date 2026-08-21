@@ -11,6 +11,6 @@ export type NonogramBattleData = {
   columnClues: number[][];
   startedAt: number | null;
   winnerUserId: string | null;
-  my: { userId: string; board: CellState[][]; progress: number };
-  opponent: { userId: string; progress: number } | null;
+  my: { userId: string; board: CellState[][]; progress: number; finished: boolean };
+  opponent: { userId: string; progress: number; finished: boolean } | null;
 };

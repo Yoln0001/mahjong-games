@@ -99,17 +99,17 @@ export default function NonogramBattle() {
   }) : null, [data]);
 
   const paint = useCallback((row: number, column: number, mode: DrawMode) => {
-    if (!data || data.status !== "playing") return;
+    if (!data || data.status !== "playing" || data.my.finished) return;
     const previous = data.my.board[row]?.[column] ?? "unknown";
     const next: CellState = previous === mode ? "unknown" : mode;
     setData((current) => current ? ({ ...current, my: { ...current.my, board: current.my.board.map((line, r) => line.map((cell, c) => r === row && c === column ? next : cell)) } }) : current);
-    void moveNonogramBattle(data.matchId, userId, row, column, next).then((result) => {
-      if (result.status === "finished") setData(result);
-    }).catch((error) => message.error(error instanceof Error ? error.message : "落子失败"));
+    void moveNonogramBattle(data.matchId, userId, row, column, next)
+      .then(setData)
+      .catch((error) => message.error(error instanceof Error ? error.message : "落子失败"));
   }, [data, userId]);
 
   const clearMyBoard = useCallback(() => {
-    if (!data || data.status !== "playing") return;
+    if (!data || data.status !== "playing" || data.my.finished) return;
     void clearNonogramBattle(data.matchId, userId).then(setData).catch((error) => message.error(error instanceof Error ? error.message : "清空失败"));
   }, [data, userId]);
 
@@ -163,10 +163,16 @@ export default function NonogramBattle() {
         <section className="nonogram-waiting"><div className="waiting-pulse" /><h2>等待对手加入</h2><p>复制邀请链接发给朋友，对手进入后自动开始。</p></section>
       ) : (
         <section className="nonogram-play-area">
+          {data.status === "playing" && data.my.finished && (
+            <div className="nonogram-battle-result won"><strong>你已完成</strong><span>等待对手完成棋盘。</span></div>
+          )}
+          {data.status === "playing" && !data.my.finished && data.opponent?.finished && (
+            <div className="nonogram-battle-result lost"><strong>对手已经完成</strong><span>游戏仍在继续，完成你的棋盘吧。</span></div>
+          )}
           {data.status === "finished" && <div className={`nonogram-battle-result ${won ? "won" : "lost"}`}><strong>{won ? "你赢了！" : "对手先完成"}</strong><span>{won ? "漂亮的推理。" : "再来一局一定能赢。"}</span></div>}
-          <NonogramBoard puzzle={puzzle} board={data.my.board} drawMode={drawMode} disabled={data.status !== "playing"} onPaint={paint} />
+          <NonogramBoard puzzle={puzzle} board={data.my.board} drawMode={drawMode} disabled={data.status !== "playing" || data.my.finished} onPaint={paint} />
           <NonogramToolbar mode={drawMode} onModeChange={setDrawMode} onClear={clearMyBoard} onNew={() => navigate("/nonogram/battle")} />
-          <p className="nonogram-help">双方题目完全相同，率先正确完成棋盘的玩家获胜。</p>
+          <p className="nonogram-help">填色或标记都会增加进度；率先完成者获胜，双方全部完成后对局结束。</p>
         </section>
       )}
     </main>

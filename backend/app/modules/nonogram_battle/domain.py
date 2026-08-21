@@ -257,7 +257,11 @@ def join_match(state: Dict[str, Any], user_id: str) -> Dict[str, Any]:
 
 
 def _is_solved(board: List[List[str]], solution: List[List[bool]]) -> bool:
-    return all((board[row][column] == "filled") == solution[row][column] for row in range(len(solution)) for column in range(len(solution)))
+    return all(
+        (board[row][column] == "filled") == solution[row][column]
+        for row in range(len(solution))
+        for column in range(len(solution))
+    )
 
 
 def apply_move(state: Dict[str, Any], user_id: str, row: int, column: int, cell_state: str) -> Dict[str, Any]:
@@ -266,6 +270,8 @@ def apply_move(state: Dict[str, Any], user_id: str, row: int, column: int, cell_
     player = state["players"].get(user_id)
     if player is None:
         raise ValueError("USER_NOT_IN_MATCH")
+    if player.get("finishedAt"):
+        raise ValueError("PLAYER_ALREADY_FINISHED")
     size = state["size"]
     if row < 0 or column < 0 or row >= size or column >= size:
         raise ValueError("CELL_OUT_OF_RANGE")
@@ -273,9 +279,11 @@ def apply_move(state: Dict[str, Any], user_id: str, row: int, column: int, cell_
     if _is_solved(player["board"], state["solution"]):
         now = time.time()
         player["finishedAt"] = now
-        state["status"] = "finished"
-        state["finishedAt"] = now
-        state["winnerUserId"] = user_id
+        if state.get("winnerUserId") is None:
+            state["winnerUserId"] = user_id
+        if all(entry.get("finishedAt") for entry in state["players"].values()):
+            state["status"] = "finished"
+            state["finishedAt"] = now
     return state
 
 
@@ -285,6 +293,8 @@ def clear_board(state: Dict[str, Any], user_id: str) -> Dict[str, Any]:
     player = state["players"].get(user_id)
     if player is None:
         raise ValueError("USER_NOT_IN_MATCH")
+    if player.get("finishedAt"):
+        raise ValueError("PLAYER_ALREADY_FINISHED")
     player["board"] = _empty_board(state["size"])
     return state
 
@@ -292,9 +302,9 @@ def clear_board(state: Dict[str, Any], user_id: str) -> Dict[str, Any]:
 def _progress(player: Optional[Dict[str, Any]], solution: List[List[bool]]) -> int:
     if not player:
         return 0
-    total = sum(sum(1 for cell in row if cell) for row in solution) or 1
-    correct = sum(1 for row in range(len(solution)) for column in range(len(solution)) if solution[row][column] and player["board"][row][column] == "filled")
-    return min(99, round(correct / total * 100)) if not player.get("finishedAt") else 100
+    total = len(solution) * len(solution) or 1
+    answered = sum(cell != "unknown" for row in player["board"] for cell in row)
+    return min(100, round(answered / total * 100))
 
 
 def status_payload(state: Dict[str, Any], user_id: str) -> Dict[str, Any]:
@@ -313,6 +323,6 @@ def status_payload(state: Dict[str, Any], user_id: str) -> Dict[str, Any]:
         "columnClues": state["columnClues"],
         "startedAt": state["startedAt"],
         "winnerUserId": state["winnerUserId"],
-        "my": {"userId": user_id, "board": me["board"], "progress": _progress(me, state["solution"])},
-        "opponent": {"userId": opponent_id, "progress": _progress(opponent, state["solution"])} if opponent_id else None,
+        "my": {"userId": user_id, "board": me["board"], "progress": _progress(me, state["solution"]), "finished": bool(me.get("finishedAt"))},
+        "opponent": {"userId": opponent_id, "progress": _progress(opponent, state["solution"]), "finished": bool(opponent.get("finishedAt"))} if opponent_id else None,
     }

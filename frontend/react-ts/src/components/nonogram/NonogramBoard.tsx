@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import type { CellState, DrawMode, NonogramPuzzle } from "../../games/nonogram/types";
 import NonogramCell from "./NonogramCell";
 import NonogramClues from "./NonogramClues";
@@ -14,6 +15,34 @@ export default function NonogramBoard({ puzzle, board, drawMode, disabled, onPai
   const maxRowClues = Math.max(...puzzle.rowClues.map((clues) => clues.length));
   const maxColumnClues = Math.max(...puzzle.columnClues.map((clues) => clues.length));
   const cellMax = puzzle.size <= 10 ? 44 : puzzle.size <= 15 ? 38 : puzzle.size <= 20 ? 32 : 27;
+  const puzzleSignature = useMemo(
+    () => JSON.stringify([puzzle.size, puzzle.rowClues, puzzle.columnClues]),
+    [puzzle.columnClues, puzzle.rowClues, puzzle.size],
+  );
+  const [completedClues, setCompletedClues] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    setCompletedClues(new Set());
+  }, [puzzleSignature]);
+
+  function toggleClue(direction: "row" | "column", lineIndex: number, clueIndex: number) {
+    const key = `${direction}-${lineIndex}-${clueIndex}`;
+    setCompletedClues((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function completedFor(direction: "row" | "column", lineIndex: number) {
+    const result = new Set<number>();
+    const count = direction === "row" ? puzzle.rowClues[lineIndex]?.length : puzzle.columnClues[lineIndex]?.length;
+    for (let index = 0; index < (count ?? 0); index += 1) {
+      if (completedClues.has(`${direction}-${lineIndex}-${index}`)) result.add(index);
+    }
+    return result;
+  }
 
   function start(row: number, column: number, pointerMode: DrawMode) {
     if (disabled) return;
@@ -33,12 +62,26 @@ export default function NonogramBoard({ puzzle, board, drawMode, disabled, onPai
       <div className="nonogram-corner" aria-hidden="true" />
       <div className="nonogram-column-clues">
         {puzzle.columnClues.map((clues, index) => (
-          <NonogramClues key={index} clues={clues} direction="column" />
+          <NonogramClues
+            key={index}
+            clues={clues}
+            direction="column"
+            lineIndex={index}
+            completed={completedFor("column", index)}
+            onToggle={(clueIndex) => toggleClue("column", index, clueIndex)}
+          />
         ))}
       </div>
       <div className="nonogram-row-clues">
         {puzzle.rowClues.map((clues, index) => (
-          <NonogramClues key={index} clues={clues} direction="row" />
+          <NonogramClues
+            key={index}
+            clues={clues}
+            direction="row"
+            lineIndex={index}
+            completed={completedFor("row", index)}
+            onToggle={(clueIndex) => toggleClue("row", index, clueIndex)}
+          />
         ))}
       </div>
       <div className="nonogram-grid" role="grid" aria-label={`${puzzle.size} × ${puzzle.size} 数织棋盘`}>

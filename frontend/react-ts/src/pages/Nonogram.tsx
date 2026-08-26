@@ -233,7 +233,7 @@ export default function Nonogram() {
       <section className="nonogram-play-area" aria-busy={generating}>
         <NonogramBoard puzzle={game.puzzle} board={game.board} drawMode={drawMode} disabled={generating} onPaint={paint} />
         <NonogramToolbar mode={drawMode} onModeChange={setDrawMode} onClear={clearBoard} onNew={() => newGame()} />
-        <p className="nonogram-help">点击格子填色，右键标记空格；手机端可使用下方模式切换。</p>
+        <p className="nonogram-help">点击格子填色，右键标记空格；点击行列数字可标记该段已完成。</p>
       </section>
 
       <Modal open={resultOpen} footer={null} closable={false} centered className="nonogram-result-modal">

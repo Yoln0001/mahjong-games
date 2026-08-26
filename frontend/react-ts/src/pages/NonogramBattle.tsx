@@ -172,7 +172,7 @@ export default function NonogramBattle() {
           {data.status === "finished" && <div className={`nonogram-battle-result ${won ? "won" : "lost"}`}><strong>{won ? "你赢了！" : "对手先完成"}</strong><span>{won ? "漂亮的推理。" : "再来一局一定能赢。"}</span></div>}
           <NonogramBoard puzzle={puzzle} board={data.my.board} drawMode={drawMode} disabled={data.status !== "playing" || data.my.finished} onPaint={paint} />
           <NonogramToolbar mode={drawMode} onModeChange={setDrawMode} onClear={clearMyBoard} onNew={() => navigate("/nonogram/battle")} />
-          <p className="nonogram-help">填色或标记都会增加进度；率先完成者获胜，双方全部完成后对局结束。</p>
+          <p className="nonogram-help">填色或标记都会增加进度；点击行列数字可标记该段已完成。双方全部完成后对局结束。</p>
         </section>
       )}
     </main>

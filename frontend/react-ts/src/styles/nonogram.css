@@ -37,17 +37,31 @@
 .nonogram-clue-number.is-completed { background: #2f8d79; color: #fff; opacity: .78; }
 .nonogram-clue-number:focus-visible { outline: 2px solid #2f8d79; outline-offset: 1px; }
 .nonogram-grid { display: grid; grid-template-columns: repeat(var(--nonogram-size), var(--cell)); grid-template-rows: repeat(var(--nonogram-size), var(--cell)); border-right: 2px solid #536164; border-bottom: 2px solid #536164; }
-.nonogram-cell { width: var(--cell); height: var(--cell); min-width: 0; padding: 0; display: grid; place-items: center; border: 0; border-left: 1px solid #9aa8aa; border-top: 1px solid #9aa8aa; border-radius: 0; background: #f7f5ed; color: #839092; font: 700 calc(var(--cell) * .64)/1 sans-serif; transition: background .08s, transform .08s; }
+.nonogram-cell { --paint-color: #27383b; width: var(--cell); height: var(--cell); min-width: 0; padding: 0; display: grid; place-items: center; border: 0; border-left: 1px solid #9aa8aa; border-top: 1px solid #9aa8aa; border-radius: 0; background: #f7f5ed; color: #839092; font: 700 calc(var(--cell) * .64)/1 sans-serif; transition: background .08s, color .08s, transform .08s; }
 .nonogram-cell.is-major-column { border-left-width: 2px; border-left-color: #536164; }
 .nonogram-cell.is-major-row { border-top-width: 2px; border-top-color: #536164; }
-.nonogram-cell.is-filled { background: #27383b; }
-.nonogram-cell.is-marked { background: #f7f5ed; }
+.nonogram-cell.is-filled { background: var(--paint-color); }
+.nonogram-cell.is-marked { background: #f7f5ed; color: var(--paint-color); }
+.paint-black { --paint-color: #27383b; }
+.paint-red { --paint-color: #d94b4b; }
+.paint-yellow { --paint-color: #d5a515; }
+.paint-blue { --paint-color: #367fc4; }
+.paint-green { --paint-color: #329268; }
 .nonogram-cell:hover { border-color: #36917d; transform: scale(.94); }
 
 .nonogram-toolbar { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 .nonogram-mode-switch { display: flex; padding: 3px; border-radius: 12px; background: #e6eceb; }
 .nonogram-mode-switch button { display: flex; align-items: center; gap: 7px; border: 0; background: transparent; color: #536164; }
 .nonogram-mode-switch button.active { background: white; color: #1f6557; box-shadow: 0 3px 9px rgba(31,53,58,.1); }
+.nonogram-color-picker { display: flex; align-items: center; gap: 5px; padding: 5px 7px; border-radius: 12px; background: #e6eceb; }
+.nonogram-color-swatch { --paint-color: #27383b; width: 25px; height: 25px; padding: 0; border: 3px solid #e6eceb; border-radius: 50%; background: var(--paint-color); box-shadow: 0 0 0 1px rgba(37,50,56,.16); transition: transform .12s, box-shadow .12s; }
+.nonogram-color-swatch.paint-black { --paint-color: #27383b; }
+.nonogram-color-swatch.paint-red { --paint-color: #d94b4b; }
+.nonogram-color-swatch.paint-yellow { --paint-color: #d5a515; }
+.nonogram-color-swatch.paint-blue { --paint-color: #367fc4; }
+.nonogram-color-swatch.paint-green { --paint-color: #329268; }
+.nonogram-color-swatch:hover { transform: scale(1.08); }
+.nonogram-color-swatch.active { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #287e6c; transform: scale(.9); }
 .mode-symbol { width: 16px; height: 16px; display: inline-grid; place-items: center; }
 .mode-symbol.filled { background: #27383b; border-radius: 3px; }
 .mode-symbol.marked { font-size: 22px; line-height: 1; transform: translateY(-2px); }

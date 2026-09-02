@@ -5,7 +5,7 @@ import NonogramBoard from "../components/nonogram/NonogramBoard";
 import NonogramToolbar from "../components/nonogram/NonogramToolbar";
 import { createGame, isSolved } from "../games/nonogram/game";
 import { generatePuzzle } from "../games/nonogram/generator";
-import type { CellState, DrawMode, NonogramDifficulty, NonogramGame } from "../games/nonogram/types";
+import type { CellColor, CellState, DrawColor, DrawMode, NonogramDifficulty, NonogramGame } from "../games/nonogram/types";
 import "../styles/nonogram.css";
 
 declare global {
@@ -29,6 +29,7 @@ type NonogramSave = {
   requestedSize: number;
   requestedDifficulty: NonogramDifficulty;
   drawMode: DrawMode;
+  drawColor: DrawColor;
 };
 
 function isDifficulty(value: unknown): value is NonogramDifficulty {
@@ -39,12 +40,25 @@ function isCellState(value: unknown): value is CellState {
   return value === "unknown" || value === "filled" || value === "marked";
 }
 
+function isDrawColor(value: unknown): value is DrawColor {
+  return value === "black" || value === "red" || value === "yellow" || value === "blue" || value === "green";
+}
+
+function colorCode(color: CellColor): string {
+  if (color === "black") return "k";
+  if (color === "red") return "r";
+  if (color === "yellow") return "y";
+  if (color === "blue") return "b";
+  if (color === "green") return "g";
+  return ".";
+}
+
 function loadSavedGame(): NonogramSave | null {
   try {
     const raw = window.localStorage.getItem(NONOGRAM_SAVE_KEY);
     if (!raw) return null;
     const saved = JSON.parse(raw) as Partial<NonogramSave>;
-    const game = saved.game;
+    const game = saved.game as (NonogramGame & { colors?: CellColor[][] }) | undefined;
     const size = game?.puzzle?.size;
     if (
       saved.version !== 1
@@ -64,16 +78,25 @@ function loadSavedGame(): NonogramSave | null {
     ) return null;
 
     const elapsed = Math.max(0, Math.floor(saved.elapsed ?? 0));
+    const colors = Array.from({ length: size }, (_, row) =>
+      Array.from({ length: size }, (_, column): CellColor => {
+        if (game.board[row]?.[column] === "unknown") return null;
+        const savedColor = game.colors?.[row]?.[column];
+        return isDrawColor(savedColor) ? savedColor : "black";
+      }),
+    );
     return {
       version: 1,
       game: {
         ...game,
+        colors,
         startedAt: game.finished ? game.startedAt : Date.now() - elapsed * 1000,
       },
       elapsed,
       requestedSize: Number.isInteger(saved.requestedSize) ? Math.max(5, Math.min(25, saved.requestedSize ?? size)) : size,
       requestedDifficulty: isDifficulty(saved.requestedDifficulty) ? saved.requestedDifficulty : game.puzzle.difficulty,
       drawMode: saved.drawMode === "marked" ? "marked" : "filled",
+      drawColor: isDrawColor(saved.drawColor) ? saved.drawColor : "black",
     };
   } catch {
     return null;
@@ -87,6 +110,7 @@ export default function Nonogram() {
   const [requestedDifficulty, setRequestedDifficulty] = useState<NonogramDifficulty>(restored?.requestedDifficulty ?? "normal");
   const [game, setGame] = useState<NonogramGame>(() => restored?.game ?? createGame(generatePuzzle(10, "normal")));
   const [drawMode, setDrawMode] = useState<DrawMode>(restored?.drawMode ?? "filled");
+  const [drawColor, setDrawColor] = useState<DrawColor>(restored?.drawColor ?? "black");
   const [elapsed, setElapsed] = useState(restored?.elapsed ?? 0);
   const [resultOpen, setResultOpen] = useState(restored?.game.finished ?? false);
   const [generating, setGenerating] = useState(false);
@@ -108,6 +132,9 @@ export default function Nonogram() {
       board: Array.from({ length: current.puzzle.size }, () =>
         Array<CellState>(current.puzzle.size).fill("unknown"),
       ),
+      colors: Array.from({ length: current.puzzle.size }, () =>
+        Array<CellColor>(current.puzzle.size).fill(null),
+      ),
       finished: false,
       finishedAt: null,
     }));
@@ -118,19 +145,22 @@ export default function Nonogram() {
     setGame((current) => {
       if (current.finished) return current;
       const board = current.board.map((line) => [...line]);
+      const colors = current.colors.map((line) => [...line]);
       const previous = board[row]?.[column] ?? "unknown";
-      const next: CellState = previous === mode ? "unknown" : mode;
+      const next: CellState = previous === "unknown" ? mode : "unknown";
       board[row]![column] = next;
+      colors[row]![column] = next === "unknown" ? null : drawColor;
       const finished = isSolved(board, current.puzzle.solution);
       if (finished) window.setTimeout(() => setResultOpen(true), 120);
       return {
         ...current,
         board,
+        colors,
         finished,
         finishedAt: finished ? Date.now() : null,
       };
     });
-  }, []);
+  }, [drawColor]);
 
   useEffect(() => {
     if (game.finished) return;
@@ -148,13 +178,14 @@ export default function Nonogram() {
       requestedSize,
       requestedDifficulty,
       drawMode,
+      drawColor,
     };
     try {
       window.localStorage.setItem(NONOGRAM_SAVE_KEY, JSON.stringify(saved));
     } catch {
       // Browsers may disable storage in private mode; gameplay should continue.
     }
-  }, [drawMode, elapsed, game, requestedDifficulty, requestedSize]);
+  }, [drawColor, drawMode, elapsed, game, requestedDifficulty, requestedSize]);
 
   const textState = useMemo(() => ({
     mode: game.finished ? "completed" : "playing",
@@ -162,11 +193,13 @@ export default function Nonogram() {
     size: game.puzzle.size,
     difficulty: game.puzzle.difficulty,
     drawMode,
+    drawColor,
     elapsedSeconds: elapsed,
     rowClues: game.puzzle.rowClues,
     columnClues: game.puzzle.columnClues,
     board: game.board.map((row) => row.map((cell) => cell === "filled" ? "#" : cell === "marked" ? "x" : ".").join("")),
-  }), [drawMode, elapsed, game]);
+    colors: game.colors.map((row) => row.map(colorCode).join("")),
+  }), [drawColor, drawMode, elapsed, game]);
 
   useEffect(() => {
     window.render_game_to_text = () => JSON.stringify(textState);
@@ -231,8 +264,8 @@ export default function Nonogram() {
       </section>
 
       <section className="nonogram-play-area" aria-busy={generating}>
-        <NonogramBoard puzzle={game.puzzle} board={game.board} drawMode={drawMode} disabled={generating} onPaint={paint} />
-        <NonogramToolbar mode={drawMode} onModeChange={setDrawMode} onClear={clearBoard} onNew={() => newGame()} />
+        <NonogramBoard puzzle={game.puzzle} board={game.board} colors={game.colors} drawMode={drawMode} disabled={generating} onPaint={paint} />
+        <NonogramToolbar mode={drawMode} color={drawColor} onModeChange={setDrawMode} onColorChange={setDrawColor} onClear={clearBoard} onNew={() => newGame()} />
         <p className="nonogram-help">点击格子填色，右键标记空格；点击行列数字可标记该段已完成。</p>
       </section>
 

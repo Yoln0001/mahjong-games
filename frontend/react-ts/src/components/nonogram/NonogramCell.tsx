@@ -1,18 +1,19 @@
-import type { CellState, DrawMode } from "../../games/nonogram/types";
+import type { CellColor, CellState, DrawMode } from "../../games/nonogram/types";
 
 type Props = {
   row: number;
   column: number;
   state: CellState;
+  color: CellColor;
   majorColumn: boolean;
   majorRow: boolean;
   onDrawStart: (row: number, column: number, mode: DrawMode) => void;
 };
 
-export default function NonogramCell({ row, column, state, majorColumn, majorRow, onDrawStart }: Props) {
+export default function NonogramCell({ row, column, state, color, majorColumn, majorRow, onDrawStart }: Props) {
   return (
     <button
-      className={`nonogram-cell is-${state}${majorColumn ? " is-major-column" : ""}${majorRow ? " is-major-row" : ""}`}
+      className={`nonogram-cell is-${state} paint-${color ?? "black"}${majorColumn ? " is-major-column" : ""}${majorRow ? " is-major-row" : ""}`}
       type="button"
       data-row={row}
       data-column={column}

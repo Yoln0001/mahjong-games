@@ -3,7 +3,7 @@ import { message } from "antd";
 import { useNavigate, useParams } from "react-router-dom";
 import NonogramBoard from "../components/nonogram/NonogramBoard";
 import NonogramToolbar from "../components/nonogram/NonogramToolbar";
-import type { CellState, DrawMode, NonogramDifficulty, NonogramPuzzle } from "../games/nonogram/types";
+import type { CellColor, CellState, DrawColor, DrawMode, NonogramDifficulty, NonogramPuzzle } from "../games/nonogram/types";
 import { clearNonogramBattle, createNonogramBattle, getNonogramBattleStatus, joinNonogramBattle, moveNonogramBattle } from "../services/nonogramBattleApi";
 import type { NonogramBattleData } from "../types/nonogramBattle";
 import { getOrCreateUserId } from "../utils/userId";
@@ -37,6 +37,8 @@ export default function NonogramBattle() {
   const [joinId, setJoinId] = useState("");
   const [data, setData] = useState<NonogramBattleData | null>(null);
   const [drawMode, setDrawMode] = useState<DrawMode>("filled");
+  const [drawColor, setDrawColor] = useState<DrawColor>("black");
+  const [colors, setColors] = useState<CellColor[][]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
 
@@ -97,20 +99,31 @@ export default function NonogramBattle() {
     difficulty: data.difficulty,
     solution: Array.from({ length: data.size }, () => Array<boolean>(data.size).fill(false)),
   }) : null, [data]);
+  const activeMatchId = data?.matchId;
+  const activeSize = data?.size;
+
+  useEffect(() => {
+    if (!activeMatchId || !activeSize) return;
+    setColors(Array.from({ length: activeSize }, () => Array<CellColor>(activeSize).fill(null)));
+  }, [activeMatchId, activeSize]);
 
   const paint = useCallback((row: number, column: number, mode: DrawMode) => {
     if (!data || data.status !== "playing" || data.my.finished) return;
     const previous = data.my.board[row]?.[column] ?? "unknown";
-    const next: CellState = previous === mode ? "unknown" : mode;
+    const next: CellState = previous === "unknown" ? mode : "unknown";
+    setColors((current) => current.map((line, r) => line.map((color, c) => r === row && c === column ? (next === "unknown" ? null : drawColor) : color)));
     setData((current) => current ? ({ ...current, my: { ...current.my, board: current.my.board.map((line, r) => line.map((cell, c) => r === row && c === column ? next : cell)) } }) : current);
     void moveNonogramBattle(data.matchId, userId, row, column, next)
       .then(setData)
       .catch((error) => message.error(error instanceof Error ? error.message : "落子失败"));
-  }, [data, userId]);
+  }, [data, drawColor, userId]);
 
   const clearMyBoard = useCallback(() => {
     if (!data || data.status !== "playing" || data.my.finished) return;
-    void clearNonogramBattle(data.matchId, userId).then(setData).catch((error) => message.error(error instanceof Error ? error.message : "清空失败"));
+    void clearNonogramBattle(data.matchId, userId).then((next) => {
+      setData(next);
+      setColors(Array.from({ length: next.size }, () => Array<CellColor>(next.size).fill(null)));
+    }).catch((error) => message.error(error instanceof Error ? error.message : "清空失败"));
   }, [data, userId]);
 
   if (!routeMatchId) {
@@ -170,8 +183,8 @@ export default function NonogramBattle() {
             <div className="nonogram-battle-result lost"><strong>对手已经完成</strong><span>游戏仍在继续，完成你的棋盘吧。</span></div>
           )}
           {data.status === "finished" && <div className={`nonogram-battle-result ${won ? "won" : "lost"}`}><strong>{won ? "你赢了！" : "对手先完成"}</strong><span>{won ? "漂亮的推理。" : "再来一局一定能赢。"}</span></div>}
-          <NonogramBoard puzzle={puzzle} board={data.my.board} drawMode={drawMode} disabled={data.status !== "playing" || data.my.finished} onPaint={paint} />
-          <NonogramToolbar mode={drawMode} onModeChange={setDrawMode} onClear={clearMyBoard} onNew={() => navigate("/nonogram/battle")} />
+          <NonogramBoard puzzle={puzzle} board={data.my.board} colors={colors} drawMode={drawMode} disabled={data.status !== "playing" || data.my.finished} onPaint={paint} />
+          <NonogramToolbar mode={drawMode} color={drawColor} onModeChange={setDrawMode} onColorChange={setDrawColor} onClear={clearMyBoard} onNew={() => navigate("/nonogram/battle")} />
           <p className="nonogram-help">填色或标记都会增加进度；点击行列数字可标记该段已完成。双方全部完成后对局结束。</p>
         </section>
       )}

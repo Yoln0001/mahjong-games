@@ -1,5 +1,7 @@
 export type CellState = "unknown" | "filled" | "marked";
 export type DrawMode = "filled" | "marked";
+export type DrawColor = "black" | "red" | "yellow" | "blue" | "green";
+export type CellColor = DrawColor | null;
 export type NonogramDifficulty = "easy" | "normal" | "hard";
 
 export type NonogramPuzzle = {
@@ -13,6 +15,7 @@ export type NonogramPuzzle = {
 export type NonogramGame = {
   puzzle: NonogramPuzzle;
   board: CellState[][];
+  colors: CellColor[][];
   startedAt: number;
   finishedAt: number | null;
   finished: boolean;

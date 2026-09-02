@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import type { CellState, DrawMode, NonogramPuzzle } from "../../games/nonogram/types";
+import type { CellColor, CellState, DrawMode, NonogramPuzzle } from "../../games/nonogram/types";
 import NonogramCell from "./NonogramCell";
 import NonogramClues from "./NonogramClues";
 
 type Props = {
   puzzle: NonogramPuzzle;
   board: CellState[][];
+  colors: CellColor[][];
   drawMode: DrawMode;
   disabled?: boolean;
   onPaint: (row: number, column: number, mode: DrawMode) => void;
 };
 
-export default function NonogramBoard({ puzzle, board, drawMode, disabled, onPaint }: Props) {
+export default function NonogramBoard({ puzzle, board, colors, drawMode, disabled, onPaint }: Props) {
   const maxRowClues = Math.max(...puzzle.rowClues.map((clues) => clues.length));
   const maxColumnClues = Math.max(...puzzle.columnClues.map((clues) => clues.length));
   const cellMax = puzzle.size <= 10 ? 44 : puzzle.size <= 15 ? 38 : puzzle.size <= 20 ? 32 : 27;
@@ -91,6 +92,7 @@ export default function NonogramBoard({ puzzle, board, drawMode, disabled, onPai
             row={rowIndex}
             column={columnIndex}
             state={state}
+            color={colors[rowIndex]?.[columnIndex] ?? null}
             majorColumn={puzzle.size >= 10 && columnIndex > 0 && columnIndex % 5 === 0}
             majorRow={puzzle.size >= 10 && rowIndex > 0 && rowIndex % 5 === 0}
             onDrawStart={start}

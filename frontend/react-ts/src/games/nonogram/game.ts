@@ -1,10 +1,13 @@
-import type { CellState, NonogramGame, NonogramPuzzle } from "./types";
+import type { CellColor, CellState, NonogramGame, NonogramPuzzle } from "./types";
 
 export function createGame(puzzle: NonogramPuzzle): NonogramGame {
   return {
     puzzle,
     board: Array.from({ length: puzzle.size }, () =>
       Array<CellState>(puzzle.size).fill("unknown"),
+    ),
+    colors: Array.from({ length: puzzle.size }, () =>
+      Array<CellColor>(puzzle.size).fill(null),
     ),
     startedAt: Date.now(),
     finishedAt: null,

@@ -6,7 +6,7 @@ type Props = {
   color: DrawColor;
   onModeChange: (mode: DrawMode) => void;
   onColorChange: (color: DrawColor) => void;
-  onClear: () => void;
+  onClear: () => void | Promise<void>;
   onNew: () => void;
 };
 
@@ -18,12 +18,20 @@ const COLORS: Array<{ value: DrawColor; label: string }> = [
   { value: "green", label: "绿色" },
 ];
 
+const COLOR_LABELS: Record<DrawColor, string> = {
+  black: "黑色",
+  red: "红色",
+  yellow: "黄色",
+  blue: "蓝色",
+  green: "绿色",
+};
+
 export default function NonogramToolbar({ mode, color, onModeChange, onColorChange, onClear, onNew }: Props) {
   function confirmClear() {
     Modal.confirm({
-      title: "确认清空棋盘？",
-      content: "当前的填色和标记都会被删除。",
-      okText: "清空",
+      title: `确认清空${COLOR_LABELS[color]}内容？`,
+      content: `棋盘上所有${COLOR_LABELS[color]}方块和叉都会被删除，其他颜色不受影响。`,
+      okText: "清空当前颜色",
       cancelText: "取消",
       okButtonProps: { danger: true },
       onOk: onClear,
@@ -53,7 +61,7 @@ export default function NonogramToolbar({ mode, color, onModeChange, onColorChan
           />
         ))}
       </div>
-      <button type="button" className="nonogram-subtle-btn" onClick={confirmClear}>清空</button>
+      <button type="button" className="nonogram-subtle-btn" onClick={confirmClear}>清空当前颜色</button>
       <button type="button" className="nonogram-new-btn" onClick={onNew}>新游戏</button>
     </div>
   );

@@ -127,19 +127,23 @@ export default function Nonogram() {
   }, [requestedDifficulty, requestedSize]);
 
   const clearBoard = useCallback(() => {
-    setGame((current) => ({
-      ...current,
-      board: Array.from({ length: current.puzzle.size }, () =>
-        Array<CellState>(current.puzzle.size).fill("unknown"),
-      ),
-      colors: Array.from({ length: current.puzzle.size }, () =>
-        Array<CellColor>(current.puzzle.size).fill(null),
-      ),
-      finished: false,
-      finishedAt: null,
-    }));
+    setGame((current) => {
+      const changed = current.colors.some((line) => line.some((color) => color === drawColor));
+      if (!changed) return current;
+      const board = current.board.map((line, row) => line.map((cell, column) =>
+        current.colors[row]?.[column] === drawColor ? "unknown" : cell,
+      ));
+      const colors = current.colors.map((line) => line.map((color) => color === drawColor ? null : color));
+      return {
+        ...current,
+        board,
+        colors,
+        finished: false,
+        finishedAt: null,
+      };
+    });
     setResultOpen(false);
-  }, []);
+  }, [drawColor]);
 
   const paint = useCallback((row: number, column: number, mode: DrawMode) => {
     setGame((current) => {

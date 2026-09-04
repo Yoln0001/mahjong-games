@@ -3,6 +3,7 @@ import { message } from "antd";
 import { useNavigate, useParams } from "react-router-dom";
 import NonogramBoard from "../components/nonogram/NonogramBoard";
 import NonogramToolbar from "../components/nonogram/NonogramToolbar";
+import NonogramSizePicker from "../components/nonogram/NonogramSizePicker";
 import type { CellColor, CellState, DrawColor, DrawMode, NonogramDifficulty, NonogramPuzzle } from "../games/nonogram/types";
 import { createNonogramBattle, getNonogramBattleStatus, joinNonogramBattle, moveNonogramBattle } from "../services/nonogramBattleApi";
 import type { NonogramBattleData } from "../types/nonogramBattle";
@@ -157,15 +158,15 @@ export default function NonogramBattle() {
         <section className="nonogram-battle-lobby">
           <div className="nonogram-lobby-card">
             <span className="lobby-number">01</span><h2>创建房间</h2><p>选择棋盘尺寸，生成一场新的对战。</p>
-            <div className="lobby-controls"><input type="number" min={5} max={25} value={size} onChange={(event) => setSize(Math.max(5, Math.min(25, Number(event.target.value) || 5)))} /><span>× {size}</span></div>
+            <NonogramSizePicker value={size} onChange={setSize} />
             <div className="nonogram-difficulty lobby-difficulty" role="group" aria-label="题目难度">
-              {(["easy", "normal", "hard"] as NonogramDifficulty[]).map((value) => (
+              {(["easy", "normal", "hard", "expert"] as NonogramDifficulty[]).map((value) => (
                 <button key={value} type="button" className={difficulty === value ? "active" : ""} onClick={() => setDifficulty(value)}>
-                  {{ easy: "简单", normal: "普通", hard: "困难" }[value]}
+                  {{ easy: "简单", normal: "普通", hard: "困难", expert: "极难" }[value]}
                 </button>
               ))}
             </div>
-            <button type="button" disabled={loading} onClick={() => void createRoom()}>创建对战</button>
+            <button type="button" disabled={loading} onClick={() => void createRoom()}>{loading ? "生成中…" : "创建对战"}</button>
           </div>
           <div className="nonogram-lobby-card">
             <span className="lobby-number">02</span><h2>加入房间</h2><p>输入朋友发给你的房间号。</p>

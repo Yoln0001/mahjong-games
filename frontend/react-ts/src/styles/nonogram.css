@@ -15,6 +15,13 @@
 
 .nonogram-size-panel { display: flex; align-items: center; gap: 10px; padding: 12px 14px; margin-bottom: 22px; border: 1px solid rgba(37,50,56,.12); border-radius: 14px; background: rgba(255,255,255,.72); }
 .nonogram-size-panel label { font-weight: 700; }
+.nonogram-size-label { font-weight: 700; }
+.nonogram-size-picker { display: inline-flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.nonogram-size-picker output { min-width: 78px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+.nonogram-size-arrows { display: flex; flex-direction: column; gap: 4px; }
+.nonogram-size-picker .nonogram-size-arrows button { width: 44px; height: 44px; min-height: 44px; margin: 0; padding: 0; border: 1px solid #b9c5c7; border-radius: 8px; background: #fff; color: #287e6c; box-shadow: none; font-size: 16px; cursor: pointer; touch-action: manipulation; }
+.nonogram-size-picker .nonogram-size-arrows button:disabled { opacity: .35; cursor: default; }
+.nonogram-size-picker .nonogram-size-arrows button:focus-visible { outline: 2px solid #287e6c; outline-offset: 2px; }
 .nonogram-size-panel input { width: 64px; padding: 8px; border: 1px solid #b9c5c7; border-radius: 8px; background: white; color: #253238; font: inherit; text-align: center; }
 .nonogram-size-panel button, .nonogram-new-btn, .nonogram-result button:first-of-type { border: 0; background: #287e6c; color: white; font-weight: 700; box-shadow: 0 5px 14px rgba(40,126,108,.22); }
 .nonogram-size-panel button { margin-left: auto; }
@@ -67,6 +74,7 @@
 .mode-symbol.marked { font-size: 22px; line-height: 1; transform: translateY(-2px); }
 .nonogram-subtle-btn { background: transparent; color: #536164; border: 1px solid #b8c3c4; }
 .nonogram-help { margin: -5px 0 0; color: #758286; font-size: 13px; text-align: center; }
+.nonogram-expert-note { margin: -10px 0 16px; color: #69777c; font-size: 13px; }
 
 .nonogram-result { display: grid; justify-items: center; gap: 10px; padding: 18px; text-align: center; }
 .nonogram-result-icon { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 50%; background: #dff3eb; color: #287e6c; font-size: 30px; font-weight: 900; }

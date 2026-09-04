@@ -2,7 +2,7 @@ export type CellState = "unknown" | "filled" | "marked";
 export type DrawMode = "filled" | "marked";
 export type DrawColor = "black" | "red" | "yellow" | "blue" | "green";
 export type CellColor = DrawColor | null;
-export type NonogramDifficulty = "easy" | "normal" | "hard";
+export type NonogramDifficulty = "easy" | "normal" | "hard" | "expert";
 
 export type NonogramPuzzle = {
   size: number;

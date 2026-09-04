@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Modal } from "antd";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Modal, message } from "antd";
 import { useNavigate } from "react-router-dom";
 import NonogramBoard from "../components/nonogram/NonogramBoard";
 import NonogramToolbar from "../components/nonogram/NonogramToolbar";
+import NonogramSizePicker from "../components/nonogram/NonogramSizePicker";
 import { createGame, isSolved } from "../games/nonogram/game";
 import { generatePuzzle } from "../games/nonogram/generator";
 import type { CellColor, CellState, DrawColor, DrawMode, NonogramDifficulty, NonogramGame } from "../games/nonogram/types";
@@ -33,7 +34,7 @@ type NonogramSave = {
 };
 
 function isDifficulty(value: unknown): value is NonogramDifficulty {
-  return value === "easy" || value === "normal" || value === "hard";
+  return value === "easy" || value === "normal" || value === "hard" || value === "expert";
 }
 
 function isCellState(value: unknown): value is CellState {
@@ -106,7 +107,7 @@ function loadSavedGame(): NonogramSave | null {
 export default function Nonogram() {
   const navigate = useNavigate();
   const [restored] = useState(loadSavedGame);
-  const [requestedSize, setRequestedSize] = useState(restored?.requestedSize ?? 10);
+  const [requestedSize, setRequestedSize] = useState(() => Math.max(5, Math.min(25, Math.round((restored?.requestedSize ?? 10) / 5) * 5)));
   const [requestedDifficulty, setRequestedDifficulty] = useState<NonogramDifficulty>(restored?.requestedDifficulty ?? "normal");
   const [game, setGame] = useState<NonogramGame>(() => restored?.game ?? createGame(generatePuzzle(10, "normal")));
   const [drawMode, setDrawMode] = useState<DrawMode>(restored?.drawMode ?? "filled");
@@ -114,16 +115,45 @@ export default function Nonogram() {
   const [elapsed, setElapsed] = useState(restored?.elapsed ?? 0);
   const [resultOpen, setResultOpen] = useState(restored?.game.finished ?? false);
   const [generating, setGenerating] = useState(false);
+  const workerRef = useRef<Worker | null>(null);
+  const generationTimer = useRef<number | undefined>(undefined);
+
+  useEffect(() => () => {
+    workerRef.current?.terminate();
+    window.clearTimeout(generationTimer.current);
+  }, []);
 
   const newGame = useCallback((size = requestedSize, difficulty = requestedDifficulty) => {
+    if (workerRef.current) return;
     setGenerating(true);
-    window.setTimeout(() => {
-      const next = createGame(generatePuzzle(size, difficulty));
-      setGame(next);
-      setElapsed(0);
-      setResultOpen(false);
+    const finish = () => {
+      workerRef.current?.terminate();
+      workerRef.current = null;
+      window.clearTimeout(generationTimer.current);
       setGenerating(false);
-    }, 20);
+    };
+    try {
+      const worker = new Worker(new URL("../games/nonogram/generator.worker.ts", import.meta.url), { type: "module" });
+      workerRef.current = worker;
+      worker.onmessage = (event) => {
+        if (event.data.error) message.warning(event.data.error);
+        else {
+          setGame(createGame(event.data.puzzle));
+          setElapsed(0);
+          setResultOpen(false);
+        }
+        finish();
+      };
+      worker.onerror = () => { message.error("生成失败，请重试。"); finish(); };
+      generationTimer.current = window.setTimeout(() => {
+        message.warning("生成超时，原棋盘已保留，请重试。");
+        finish();
+      }, 8000);
+      worker.postMessage({ size, difficulty });
+    } catch {
+      message.error("无法启动题目生成，请重试。");
+      finish();
+    }
   }, [requestedDifficulty, requestedSize]);
 
   const clearBoard = useCallback(() => {
@@ -233,32 +263,24 @@ export default function Nonogram() {
           <p>根据行列数字，找出隐藏的图案。</p>
         </div>
         <div className="nonogram-meta">
-          <span>{game.puzzle.size} × {game.puzzle.size} · {{ easy: "简单", normal: "普通", hard: "困难" }[game.puzzle.difficulty]}</span>
+          <span>{game.puzzle.size} × {game.puzzle.size} · {{ easy: "简单", normal: "普通", hard: "困难", expert: "极难" }[game.puzzle.difficulty]}</span>
           <strong>{formatTime(elapsed)}</strong>
         </div>
         <button className="nonogram-battle-entry" type="button" onClick={() => navigate("/nonogram/battle")}>双人对战</button>
       </section>
 
       <section className="nonogram-size-panel" aria-label="棋盘尺寸">
-        <label htmlFor="nonogram-size">方格大小</label>
-        <input
-          id="nonogram-size"
-          type="number"
-          min={5}
-          max={25}
-          value={requestedSize}
-          onChange={(event) => setRequestedSize(Math.max(5, Math.min(25, Number(event.target.value) || 5)))}
-        />
-        <span>× {requestedSize}</span>
+        <span className="nonogram-size-label">方格大小</span>
+        <NonogramSizePicker value={requestedSize} onChange={setRequestedSize} />
         <div className="nonogram-difficulty" role="group" aria-label="题目难度">
-          {(["easy", "normal", "hard"] as NonogramDifficulty[]).map((difficulty) => (
+          {(["easy", "normal", "hard", "expert"] as NonogramDifficulty[]).map((difficulty) => (
             <button
               key={difficulty}
               type="button"
               className={requestedDifficulty === difficulty ? "active" : ""}
               onClick={() => setRequestedDifficulty(difficulty)}
             >
-              {{ easy: "简单", normal: "普通", hard: "困难" }[difficulty]}
+              {{ easy: "简单", normal: "普通", hard: "困难", expert: "极难" }[difficulty]}
             </button>
           ))}
         </div>
@@ -267,6 +289,9 @@ export default function Nonogram() {
         </button>
       </section>
 
+      {requestedDifficulty === "expert" && (
+        <p className="nonogram-expert-note">极难需要假设排除，题目保证唯一解；生成可能需要数秒。</p>
+      )}
       <section className="nonogram-play-area" aria-busy={generating}>
         <NonogramBoard puzzle={game.puzzle} board={game.board} colors={game.colors} drawMode={drawMode} disabled={generating} onPaint={paint} />
         <NonogramToolbar mode={drawMode} color={drawColor} onModeChange={setDrawMode} onColorChange={setDrawColor} onClear={clearBoard} onNew={() => newGame()} />

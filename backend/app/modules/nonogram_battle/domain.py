@@ -4,6 +4,7 @@ import random
 import time
 import uuid
 from typing import Any, Dict, List, Optional
+from .expert import analyze_expert
 
 
 def line_clues(line: List[bool]) -> List[int]:
@@ -174,6 +175,24 @@ def _random_solution(size: int, difficulty: str) -> List[List[bool]]:
 
 
 def generate_puzzle(size: int, difficulty: str = "normal") -> tuple[List[List[bool]], List[List[int]], List[List[int]]]:
+    if difficulty == "expert":
+        deadline = time.monotonic() + 6
+        best = None
+        for _ in range(1000):
+            if time.monotonic() >= deadline:
+                break
+            solution = _random_solution(size, difficulty)
+            rows, columns = solution_clues(solution)
+            stats = analyze_expert(rows, columns, min(deadline, time.monotonic() + 0.15))
+            if not stats["solved"] or stats["logicalSolved"] or stats["exhausted"] or not stats["eliminations"]:
+                continue
+            if best is None or stats["eliminations"] > best[0]:
+                best = (stats["eliminations"], solution, rows, columns)
+            if stats["eliminations"] >= max(2, size // 5):
+                return solution, rows, columns
+        if best is not None:
+            return best[1], best[2], best[3]
+        raise ValueError("未找到符合极难标准的题目，请重新生成。")
     ranges = {"easy": (0, 54, 38), "normal": (55, 71, 63), "hard": (72, 100, 82)}
     low, high, target = ranges.get(difficulty, ranges["normal"])
     closest: Optional[tuple[int, List[List[bool]], List[List[int]], List[List[int]]]] = None

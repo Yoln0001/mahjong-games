@@ -20,7 +20,7 @@ class ApiResponse(BaseModel):
 class CreateReq(BaseModel):
     userId: str = Field(..., min_length=1)
     size: int = Field(10, ge=5, le=25)
-    difficulty: Literal["easy", "normal", "hard"] = "normal"
+    difficulty: Literal["easy", "normal", "hard", "expert"] = "normal"
 
 
 class JoinReq(BaseModel):
@@ -29,6 +29,6 @@ class JoinReq(BaseModel):
 
 class MoveReq(BaseModel):
     userId: str = Field(..., min_length=1)
-    row: int = Field(..., ge=0, le=14)
-    column: int = Field(..., ge=0, le=14)
+    row: int = Field(..., ge=0, le=24)
+    column: int = Field(..., ge=0, le=24)
     state: Literal["unknown", "filled", "marked"]

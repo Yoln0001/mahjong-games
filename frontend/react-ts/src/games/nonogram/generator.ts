@@ -1,5 +1,6 @@
 import { solutionToClues } from "./clues";
 import { analyzeLogicalDifficulty } from "./solver";
+import { analyzeExpertDifficulty } from "./expertSolver";
 import type { NonogramDifficulty, NonogramPuzzle } from "./types";
 
 function randomSolution(size: number, difficulty: NonogramDifficulty): boolean[][] {
@@ -36,6 +37,21 @@ function scoreRange(difficulty: NonogramDifficulty) {
 
 export function generatePuzzle(requestedSize: number, difficulty: NonogramDifficulty = "normal"): NonogramPuzzle {
   const size = Math.max(5, Math.min(25, Math.round(requestedSize)));
+  if (difficulty === "expert") {
+    const deadline = performance.now() + 6000;
+    let best: { puzzle: NonogramPuzzle; eliminations: number } | null = null;
+    for (let attempt = 0; attempt < 1000 && performance.now() < deadline; attempt++) {
+      const solution = randomSolution(size, difficulty);
+      const { rowClues, columnClues } = solutionToClues(solution);
+      const stats = analyzeExpertDifficulty(rowClues, columnClues, Math.min(deadline, performance.now() + 150));
+      if (!stats.solved || stats.logicalSolved || stats.exhausted || !stats.eliminations) continue;
+      const puzzle = { size, solution, rowClues, columnClues, difficulty };
+      if (!best || stats.eliminations > best.eliminations) best = { puzzle, eliminations: stats.eliminations };
+      if (stats.eliminations >= Math.max(2, Math.floor(size / 5))) return puzzle;
+    }
+    if (best) return best.puzzle;
+    throw new Error("未找到符合极难标准的题目，请重新生成。");
+  }
   const range = scoreRange(difficulty);
   let closest: { puzzle: NonogramPuzzle; distance: number } | null = null;
   for (let attempt = 0; attempt < 240; attempt += 1) {

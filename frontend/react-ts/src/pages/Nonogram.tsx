@@ -263,10 +263,13 @@ export default function Nonogram() {
           <p>根据行列数字，找出隐藏的图案。</p>
         </div>
         <div className="nonogram-meta">
-          <span>{game.puzzle.size} × {game.puzzle.size} · {{ easy: "简单", normal: "普通", hard: "困难", expert: "极难" }[game.puzzle.difficulty]}</span>
+          <span>{{ easy: "简单", normal: "普通", hard: "困难", expert: "极难" }[game.puzzle.difficulty]} · {game.puzzle.size} × {game.puzzle.size}</span>
           <strong>{formatTime(elapsed)}</strong>
         </div>
-        <button className="nonogram-battle-entry" type="button" onClick={() => navigate("/nonogram/battle")}>双人对战</button>
+        <div className="nonogram-mode-links">
+          <button className="nonogram-battle-entry" type="button" onClick={() => navigate("/nonogram/daily")}>每日一题</button>
+          <button className="nonogram-battle-entry" type="button" onClick={() => navigate("/nonogram/battle")}>双人对战</button>
+        </div>
       </section>
 
       <section className="nonogram-size-panel" aria-label="棋盘尺寸">

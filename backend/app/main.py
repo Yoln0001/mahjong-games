@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api import router
+from .modules.nonogram_daily.worker import daily_lifespan
 
 
 def _setup_logging() -> None:
@@ -23,6 +24,7 @@ def _setup_logging() -> None:
 def create_app() -> FastAPI:
     _setup_logging()
     app = FastAPI(
+        lifespan=daily_lifespan,
         title="Mahjong Handle Web API",
         version="0.1.0",
         docs_url="/api/docs",

@@ -14,6 +14,7 @@ import StyleArcade from "./pages/StyleArcade";
 import StyleNoir from "./pages/StyleNoir";
 import Nonogram from "./pages/Nonogram";
 import NonogramBattle from "./pages/NonogramBattle";
+import NonogramDaily from "./pages/NonogramDaily";
 import type { ThemeMode } from "./constants/tiles";
 
 type ThemeModeCtx = {
@@ -143,6 +144,7 @@ export default function App() {
             <Route path="/battle" element={<Battle />} />
             <Route path="/battle/:matchId" element={<Battle />} />
             <Route path="/nonogram" element={<Nonogram />} />
+            <Route path="/nonogram/daily" element={<NonogramDaily />} />
             <Route path="/nonogram/battle" element={<NonogramBattle />} />
             <Route path="/nonogram/battle/:matchId" element={<NonogramBattle />} />
             <Route path="/style/wafuu" element={<StyleWafuu />} />

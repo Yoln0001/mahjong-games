@@ -75,6 +75,34 @@
 .nonogram-subtle-btn { background: transparent; color: #536164; border: 1px solid #b8c3c4; }
 .nonogram-help { margin: -5px 0 0; color: #758286; font-size: 13px; text-align: center; }
 .nonogram-expert-note { margin: -10px 0 16px; color: #69777c; font-size: 13px; }
+.nonogram-mode-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.nonogram-mode-links button { min-height: 44px; }
+.daily-picker { padding: 18px; border: 1px solid #dce4e2; border-radius: 16px; margin-bottom: 20px; background: rgba(255,255,255,.8); }
+.daily-picker-heading { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.daily-picker-heading span, .daily-picker > p { color: #69777c; font-size: 13px; }
+.daily-picker-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: center; gap: 8px; margin-bottom: 8px; }
+.daily-picker-row h2 { font-size: 14px; margin: 0; }
+.daily-picker-row button { min-height: 54px; padding: 6px 2px; display: grid; gap: 4px; place-items: center; background: #f4f7f6; color: #344448; border: 1px solid #d1ddda; border-radius: 8px; touch-action: manipulation; }
+.daily-picker-row button small { font-size: 11px; }
+.daily-picker-row button.active { background: #e2f1eb; color: #196854; border: 2px solid #287e6c; }
+.daily-picker-row button:focus-visible { outline: 2px solid #287e6c; outline-offset: 2px; }
+.daily-picker-row button:disabled { opacity: .55; cursor: not-allowed; }
+.daily-picker > p { margin: 12px 0 0; }
+.daily-error { padding: 12px; background: #fff1e8; color: #894927; border-radius: 8px; }
+.daily-error button { margin-left: 10px; }
+.daily-loading { font-size: 13px; color: #69777c; }
+.daily-completed { margin: 0; color: #287e6c; font-weight: 700; }
+.daily-board-scroll { width: 100%; min-width: 0; overflow-x: auto; container-type: inline-size; }
+.daily-board-scroll .nonogram-board-wrap { width: max-content; margin: 0 auto; touch-action: pan-x pan-y; }
+.app-page-dark .daily-picker { background: #182023; border-color: #41504b; }
+@media (max-width: 620px) {
+  .nonogram-mode-links { flex-direction: column; gap: 4px; }
+  .daily-picker { padding: 12px 8px; }
+  .daily-picker-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .daily-picker-row button { font-size: 12px; min-height: 54px; }
+  .daily-picker-row h2 { font-size: 12px; }
+  .daily-board-scroll .nonogram-board-wrap { --cell: clamp(16px, calc((100cqw - var(--row-clues) * 18px - 12px) / var(--nonogram-size)), 36px); }
+}
 
 .nonogram-result { display: grid; justify-items: center; gap: 10px; padding: 18px; text-align: center; }
 .nonogram-result-icon { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 50%; background: #dff3eb; color: #287e6c; font-size: 30px; font-weight: 900; }

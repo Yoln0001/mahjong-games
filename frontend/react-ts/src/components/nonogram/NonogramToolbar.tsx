@@ -8,6 +8,7 @@ type Props = {
   onColorChange: (color: DrawColor) => void;
   onClear: () => void | Promise<void>;
   onNew: () => void;
+  newLabel?: string;
 };
 
 const COLORS: Array<{ value: DrawColor; label: string }> = [
@@ -26,7 +27,7 @@ const COLOR_LABELS: Record<DrawColor, string> = {
   green: "绿色",
 };
 
-export default function NonogramToolbar({ mode, color, onModeChange, onColorChange, onClear, onNew }: Props) {
+export default function NonogramToolbar({ mode, color, onModeChange, onColorChange, onClear, onNew, newLabel = "新游戏" }: Props) {
   function confirmClear() {
     Modal.confirm({
       title: `确认清空${COLOR_LABELS[color]}内容？`,
@@ -62,7 +63,7 @@ export default function NonogramToolbar({ mode, color, onModeChange, onColorChan
         ))}
       </div>
       <button type="button" className="nonogram-subtle-btn" onClick={confirmClear}>清空当前颜色</button>
-      <button type="button" className="nonogram-new-btn" onClick={onNew}>新游戏</button>
+      <button type="button" className="nonogram-new-btn" onClick={onNew}>{newLabel}</button>
     </div>
   );
 }

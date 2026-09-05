@@ -12,7 +12,6 @@ export default function ModeSelect() {
   const defaultUserId = useMemo(() => getOrCreateUserId(), []);
   const [creatingHandle, setCreatingHandle] = useState(false);
   const [creatingLink, setCreatingLink] = useState(false);
-  const [creatingBattle, setCreatingBattle] = useState(false);
   const isDarkTheme = themeStyle === "noir" || themeStyle === "arcade";
   const tileBase = `/tiles/${isDarkTheme ? "dark" : "light"}`;
 
@@ -67,16 +66,6 @@ export default function ModeSelect() {
       message.error(e?.message || "创建连连看失败");
     } finally {
       setCreatingLink(false);
-    }
-  }
-
-  function onCreateBattle() {
-    try {
-      setCreatingBattle(true);
-      const uid = normalizeUserId(defaultUserId) ?? defaultUserId;
-      navigate(`/battle?userId=${encodeURIComponent(uid)}`);
-    } finally {
-      setCreatingBattle(false);
     }
   }
 
@@ -136,29 +125,6 @@ export default function ModeSelect() {
             </div>
           </button>
 
-        </div>
-
-        <div className="mode-card">
-          <button
-            type="button"
-            className="mode-card-main"
-            onClick={onCreateBattle}
-            disabled={creatingBattle}
-            aria-label="进入猜手牌双人对战"
-          >
-            <div className="mode-card-top">
-              <div className="mode-game-preview mode-battle-preview" aria-hidden="true">
-                <div className="mode-battle-hand hand-left">
-                  {["Man3.svg", "Pin7.svg", "Sou5.svg"].map((tile) => <img key={tile} className="mode-mahjong-tile" src={`${tileBase}/${tile}`} alt="" />)}
-                </div>
-                <span className="mode-vs-badge">VS</span>
-                <div className="mode-battle-hand hand-right">
-                  {["Chun.svg", "Pin2.svg", "Sou9.svg"].map((tile) => <img key={tile} className="mode-mahjong-tile" src={`${tileBase}/${tile}`} alt="" />)}
-                </div>
-              </div>
-              <div className="mode-card-title">猜手牌双人对战</div>
-            </div>
-          </button>
         </div>
 
         <div className="mode-card">

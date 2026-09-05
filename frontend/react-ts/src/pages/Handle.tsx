@@ -705,9 +705,17 @@ export default function Handle() {
         )}
 
         <div style={{ marginTop: 10 }}>
-          <Space>
+          <Space wrap>
             <button className="modern-btn primary" type="button" onClick={onNewGame} disabled={loading || submitting}>
               新开一局
+            </button>
+            <button
+              className="modern-btn"
+              type="button"
+              onClick={() => navigate(`/battle?userId=${encodeURIComponent(userId)}`)}
+              disabled={loading || submitting}
+            >
+              双人对战
             </button>
           </Space>
         </div>

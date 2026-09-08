@@ -39,6 +39,21 @@ export default function NonogramToolbar({ mode, color, onModeChange, onColorChan
     });
   }
 
+  function confirmNewGame() {
+    if (newLabel !== "新游戏") {
+      onNew();
+      return;
+    }
+    Modal.confirm({
+      title: "确认开始新游戏？",
+      content: "当前题目的作答进度将被替换，且无法恢复。",
+      okText: "开始新游戏",
+      cancelText: "继续当前题目",
+      okButtonProps: { danger: true },
+      onOk: onNew,
+    });
+  }
+
   return (
     <div className="nonogram-toolbar" aria-label="游戏工具">
       <div className="nonogram-mode-switch">
@@ -63,7 +78,7 @@ export default function NonogramToolbar({ mode, color, onModeChange, onColorChan
         ))}
       </div>
       <button type="button" className="nonogram-subtle-btn" onClick={confirmClear}>清空当前颜色</button>
-      <button type="button" className="nonogram-new-btn" onClick={onNew}>{newLabel}</button>
+      <button type="button" className="nonogram-new-btn" onClick={confirmNewGame}>{newLabel}</button>
     </div>
   );
 }

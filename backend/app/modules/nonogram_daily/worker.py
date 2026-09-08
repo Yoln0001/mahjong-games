@@ -43,7 +43,8 @@ async def daily_lifespan(app):
         yield
     finally:
         stop.set()
-        await asyncio.to_thread(thread.join, 10)
+        # asyncio.to_thread is Python 3.9+; production currently runs Python 3.8.
+        await asyncio.get_running_loop().run_in_executor(None, thread.join, 10)
 
 
 if __name__ == "__main__":

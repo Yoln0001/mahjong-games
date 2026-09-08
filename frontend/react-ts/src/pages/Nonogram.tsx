@@ -8,6 +8,7 @@ import { createGame, isSolved } from "../games/nonogram/game";
 import { generatePuzzle } from "../games/nonogram/generator";
 import type { CellColor, CellState, DrawColor, DrawMode, NonogramDifficulty, NonogramGame } from "../games/nonogram/types";
 import "../styles/nonogram.css";
+import NonogramShareButton from "../components/nonogram/NonogramShareButton";
 
 declare global {
   interface Window {
@@ -117,6 +118,7 @@ export default function Nonogram() {
   const [generating, setGenerating] = useState(false);
   const workerRef = useRef<Worker | null>(null);
   const generationTimer = useRef<number | undefined>(undefined);
+
 
   useEffect(() => () => {
     workerRef.current?.terminate();
@@ -269,6 +271,7 @@ export default function Nonogram() {
         <div className="nonogram-mode-links">
           <button className="nonogram-battle-entry" type="button" onClick={() => navigate("/nonogram/daily")}>每日一题</button>
           <button className="nonogram-battle-entry" type="button" onClick={() => navigate("/nonogram/battle")}>双人对战</button>
+          <NonogramShareButton puzzle={game.puzzle} disabled={generating} />
         </div>
       </section>
 

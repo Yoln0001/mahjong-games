@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NonogramDailyPlay from "../components/nonogram/NonogramDailyPlay";
+import NonogramShareButton from "../components/nonogram/NonogramShareButton";
 import { dailyStatus } from "../games/nonogram/dailyStorage";
 import { getDailyCatalog, getDailyPuzzle } from "../services/nonogramDailyApi";
 import type { DailyCatalog, DailyEntry, DailyPuzzle } from "../services/nonogramDailyApi";
@@ -81,7 +82,10 @@ export default function NonogramDaily() {
     <main className="nonogram-page">
       <section className="nonogram-heading">
         <div><p className="nonogram-eyebrow">DAILY NONOGRAM</p><h1>每日一题</h1></div>
-        <button className="nonogram-battle-entry" type="button" onClick={() => navigate("/nonogram")}>随机模式</button>
+        <div className="nonogram-mode-links">
+          <button className="nonogram-battle-entry" type="button" onClick={() => navigate("/nonogram")}>随机模式</button>
+          {active && <NonogramShareButton puzzle={active.puzzle} disabled={loading} />}
+        </div>
       </section>
       {catalogError && <p className="daily-error" role="alert">{catalogError}<button type="button" onClick={() => window.location.reload()}>刷新</button></p>}
       {catalog ? (

@@ -91,6 +91,7 @@
 .daily-error { padding: 12px; background: #fff1e8; color: #894927; border-radius: 8px; }
 .daily-error button { margin-left: 10px; }
 .daily-loading { font-size: 13px; color: #69777c; }
+.nonogram-share-link { width: 100%; padding: 9px; border: 1px solid #b8c3c4; border-radius: 6px; }
 .daily-completed { margin: 0; color: #287e6c; font-weight: 700; }
 .daily-board-scroll { width: 100%; min-width: 0; overflow-x: auto; container-type: inline-size; }
 .daily-board-scroll .nonogram-board-wrap { width: max-content; margin: 0 auto; touch-action: pan-x pan-y; }

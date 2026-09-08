@@ -8,14 +8,14 @@ import type { DailySave } from "../../games/nonogram/dailyStorage";
 import type { DrawMode } from "../../games/nonogram/types";
 import type { DailyPuzzle } from "../../services/nonogramDailyApi";
 
-type Props = { daily: DailyPuzzle; paused: boolean; onStatus: () => void; onChoose: () => void };
+type Props = { daily: DailyPuzzle; paused: boolean; onStatus: () => void; onChoose: () => void; metaLabel?: string; newLabel?: string };
 const LABELS = { easy: "简单", normal: "普通", hard: "困难", expert: "极难" };
 function formatTime(ms: number) {
   const seconds = Math.floor(ms / 1000);
   return String(Math.floor(seconds / 60)).padStart(2, "0") + ":" + String(seconds % 60).padStart(2, "0");
 }
 
-export default function NonogramDailyPlay({ daily, paused, onStatus, onChoose }: Props) {
+export default function NonogramDailyPlay({ daily, paused, onStatus, onChoose, metaLabel, newLabel = "选择其他题目" }: Props) {
   const [save, setSave] = useState(() => loadDailySave(daily));
   const latest = useRef(save);
   const running = useRef<{ start: number; base: number } | null>(null);
@@ -85,6 +85,7 @@ export default function NonogramDailyPlay({ daily, paused, onStatus, onChoose }:
       mode: save.finished ? "completed" : "playing", dailyId: daily.id, date: daily.date,
       coordinateSystem: "zero-based row and column from top-left",
       size: daily.puzzle.size, difficulty: daily.puzzle.difficulty, elapsedSeconds: Math.floor(save.elapsedMs / 1000),
+      rowClues: daily.puzzle.rowClues, columnClues: daily.puzzle.columnClues,
       board: save.board.map(row => row.map(cell => cell === "filled" ? "#" : cell === "marked" ? "x" : ".").join("")),
       colors: save.colors, drawColor: save.drawColor, drawMode: save.drawMode,
     });
@@ -99,7 +100,7 @@ export default function NonogramDailyPlay({ daily, paused, onStatus, onChoose }:
   return (
     <section className="nonogram-play-area" aria-busy={paused}>
       <div className="nonogram-meta">
-        <span>{daily.date} · {LABELS[daily.puzzle.difficulty]} · {daily.puzzle.size} × {daily.puzzle.size}</span>
+        <span>{metaLabel ?? `${daily.date} · ${LABELS[daily.puzzle.difficulty]} · ${daily.puzzle.size} × ${daily.puzzle.size}`}</span>
         <strong>{formatTime(save.elapsedMs)}</strong>
       </div>
       {save.finished && <p className="daily-completed" role="status">✓ 本题已完成，换一道继续挑战吧！</p>}
@@ -110,7 +111,7 @@ export default function NonogramDailyPlay({ daily, paused, onStatus, onChoose }:
       <NonogramToolbar mode={save.drawMode} color={save.drawColor}
         onModeChange={drawMode => commit({ ...latest.current, drawMode })}
         onColorChange={drawColor => commit({ ...latest.current, drawColor })}
-        onClear={clearColor} onNew={onChoose} newLabel="选择其他题目" />
+        onClear={clearColor} onNew={onChoose} newLabel={newLabel} />
       <p className="nonogram-help">每题独立保存进度和颜色；切换题目、离开页面或切到后台时暂停计时。</p>
       <Modal open={resultOpen} footer={null} onCancel={() => setResultOpen(false)} centered>
         <div className="nonogram-result">
